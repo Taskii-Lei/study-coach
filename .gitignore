@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+progress.json
+notes.md
+TUTOR.md
+.env
+.env.*
+node_modules/
+*.log
