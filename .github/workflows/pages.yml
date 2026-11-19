@@ -1,14 +1,8 @@
-name: Validate and deploy study coach
+name: Optional validation
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
-concurrency:
-  group: pages-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -23,23 +17,5 @@ jobs:
       - run: node --check web/app.js && node --check web/core.js
       - run: node --test tests/web_core.test.cjs
       - run: python -m unittest discover -s tests -v
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: validate
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: web
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Check deployment assets
+        run: diff -r --exclude=.nojekyll web docs

@@ -2,6 +2,8 @@
 
 一个面向 LeetCode Hot 100、LLM 手写算法和面试复习的中文学习工作台。原生 HTML / CSS / JavaScript，无构建依赖，可直接部署到 GitHub Pages。
 
+在线地址：https://taskii-lei.github.io/study-coach/
+
 ## 网页功能
 
 - 今日三项学习清单：算法 30 分钟、LLM 手写 20 分钟、LLM 口述 10 分钟。
@@ -30,11 +32,17 @@ node --test tests/web_core.test.cjs
 python3 -m unittest discover -s tests -v
 ```
 
-## GitHub Pages
+## GitHub Pages 发布
 
-源码推送到 `main` 后，工作流先验证队列逻辑，再将 `web/` 发布到 Pages。仓库 Settings → Pages → Source 选择 GitHub Actions。仓库需具有 GitHub Pages 使用权限。
+网页源文件在 `web/`，发布文件在 `docs/`。更新网页后先同步 `web/` 到 `docs/`，再提交：
 
-部署包只包含网页源码与公共题库，不包含个人进度、作答、凭据或本地教练指令。GitHub Actions 不需要任何额外 API Key。
+```sh
+cp web/* docs/
+```
+
+GitHub 仓库 Settings → Pages 选择 **Deploy from a branch**，分支 `main`，目录 `/docs`。`docs/.nojekyll` 让 Pages 直接使用静态文件。`.github/workflows/pages.yml` 提供可手动运行的附加校验；不参与日常网页发布。
+
+作答和个人记录不会提交到公开仓库。无需任何额外 API Key。
 
 ## Python 队列
 

@@ -1,0 +1,1103 @@
+window.CURRICULUM = [
+  {
+    "id": "lc-1",
+    "title": "两数之和",
+    "track": "leetcode",
+    "topic": "哈希",
+    "url": "https://leetcode.cn/problems/two-sum/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-49",
+    "title": "字母异位词分组",
+    "track": "leetcode",
+    "topic": "哈希",
+    "url": "https://leetcode.cn/problems/group-anagrams/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-128",
+    "title": "最长连续序列",
+    "track": "leetcode",
+    "topic": "哈希",
+    "url": "https://leetcode.cn/problems/longest-consecutive-sequence/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-283",
+    "title": "移动零",
+    "track": "leetcode",
+    "topic": "双指针",
+    "url": "https://leetcode.cn/problems/move-zeroes/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-11",
+    "title": "盛最多水的容器",
+    "track": "leetcode",
+    "topic": "双指针",
+    "url": "https://leetcode.cn/problems/container-with-most-water/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-15",
+    "title": "三数之和",
+    "track": "leetcode",
+    "topic": "双指针",
+    "url": "https://leetcode.cn/problems/3sum/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-42",
+    "title": "接雨水",
+    "track": "leetcode",
+    "topic": "双指针",
+    "url": "https://leetcode.cn/problems/trapping-rain-water/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-3",
+    "title": "无重复字符的最长子串",
+    "track": "leetcode",
+    "topic": "滑动窗口",
+    "url": "https://leetcode.cn/problems/longest-substring-without-repeating-characters/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-438",
+    "title": "找到字符串中所有字母异位词",
+    "track": "leetcode",
+    "topic": "滑动窗口",
+    "url": "https://leetcode.cn/problems/find-all-anagrams-in-a-string/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-560",
+    "title": "和为 K 的子数组",
+    "track": "leetcode",
+    "topic": "前缀和",
+    "url": "https://leetcode.cn/problems/subarray-sum-equals-k/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-239",
+    "title": "滑动窗口最大值",
+    "track": "leetcode",
+    "topic": "单调队列",
+    "url": "https://leetcode.cn/problems/sliding-window-maximum/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-76",
+    "title": "最小覆盖子串",
+    "track": "leetcode",
+    "topic": "滑动窗口",
+    "url": "https://leetcode.cn/problems/minimum-window-substring/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-53",
+    "title": "最大子数组和",
+    "track": "leetcode",
+    "topic": "数组",
+    "url": "https://leetcode.cn/problems/maximum-subarray/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-56",
+    "title": "合并区间",
+    "track": "leetcode",
+    "topic": "数组",
+    "url": "https://leetcode.cn/problems/merge-intervals/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-189",
+    "title": "轮转数组",
+    "track": "leetcode",
+    "topic": "数组",
+    "url": "https://leetcode.cn/problems/rotate-array/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-238",
+    "title": "除自身以外数组的乘积",
+    "track": "leetcode",
+    "topic": "数组",
+    "url": "https://leetcode.cn/problems/product-of-array-except-self/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-41",
+    "title": "缺失的第一个正数",
+    "track": "leetcode",
+    "topic": "数组",
+    "url": "https://leetcode.cn/problems/first-missing-positive/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-73",
+    "title": "矩阵置零",
+    "track": "leetcode",
+    "topic": "矩阵",
+    "url": "https://leetcode.cn/problems/set-matrix-zeroes/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-54",
+    "title": "螺旋矩阵",
+    "track": "leetcode",
+    "topic": "矩阵",
+    "url": "https://leetcode.cn/problems/spiral-matrix/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-48",
+    "title": "旋转图像",
+    "track": "leetcode",
+    "topic": "矩阵",
+    "url": "https://leetcode.cn/problems/rotate-image/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-240",
+    "title": "搜索二维矩阵 II",
+    "track": "leetcode",
+    "topic": "矩阵",
+    "url": "https://leetcode.cn/problems/search-a-2d-matrix-ii/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-160",
+    "title": "相交链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/intersection-of-two-linked-lists/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-206",
+    "title": "反转链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/reverse-linked-list/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-234",
+    "title": "回文链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/palindrome-linked-list/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-141",
+    "title": "环形链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/linked-list-cycle/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-142",
+    "title": "环形链表 II",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/linked-list-cycle-ii/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-21",
+    "title": "合并两个有序链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/merge-two-sorted-lists/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-2",
+    "title": "两数相加",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/add-two-numbers/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-19",
+    "title": "删除链表的倒数第 N 个结点",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/remove-nth-node-from-end-of-list/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-24",
+    "title": "两两交换链表中的节点",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/swap-nodes-in-pairs/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-25",
+    "title": "K 个一组翻转链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/reverse-nodes-in-k-group/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-138",
+    "title": "随机链表的复制",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/copy-list-with-random-pointer/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-148",
+    "title": "排序链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/sort-list/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-23",
+    "title": "合并 K 个升序链表",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/merge-k-sorted-lists/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-146",
+    "title": "LRU 缓存",
+    "track": "leetcode",
+    "topic": "链表",
+    "url": "https://leetcode.cn/problems/lru-cache/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-94",
+    "title": "二叉树的中序遍历",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/binary-tree-inorder-traversal/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-104",
+    "title": "二叉树的最大深度",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/maximum-depth-of-binary-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-226",
+    "title": "翻转二叉树",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/invert-binary-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-101",
+    "title": "对称二叉树",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/symmetric-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-543",
+    "title": "二叉树的直径",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/diameter-of-binary-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-102",
+    "title": "二叉树的层序遍历",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/binary-tree-level-order-traversal/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-108",
+    "title": "将有序数组转换为二叉搜索树",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/convert-sorted-array-to-binary-search-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-98",
+    "title": "验证二叉搜索树",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/validate-binary-search-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-230",
+    "title": "二叉搜索树中第 K 小的元素",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/kth-smallest-element-in-a-bst/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-199",
+    "title": "二叉树的右视图",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/binary-tree-right-side-view/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-114",
+    "title": "二叉树展开为链表",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/flatten-binary-tree-to-linked-list/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-105",
+    "title": "从前序与中序遍历序列构造二叉树",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/construct-binary-tree-from-preorder-and-inorder-traversal/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-437",
+    "title": "路径总和 III",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/path-sum-iii/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-236",
+    "title": "二叉树的最近公共祖先",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/lowest-common-ancestor-of-a-binary-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-124",
+    "title": "二叉树中的最大路径和",
+    "track": "leetcode",
+    "topic": "二叉树",
+    "url": "https://leetcode.cn/problems/binary-tree-maximum-path-sum/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-200",
+    "title": "岛屿数量",
+    "track": "leetcode",
+    "topic": "图论",
+    "url": "https://leetcode.cn/problems/number-of-islands/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-994",
+    "title": "腐烂的橘子",
+    "track": "leetcode",
+    "topic": "图论",
+    "url": "https://leetcode.cn/problems/rotting-oranges/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-207",
+    "title": "课程表",
+    "track": "leetcode",
+    "topic": "图论",
+    "url": "https://leetcode.cn/problems/course-schedule/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-208",
+    "title": "实现 Trie",
+    "track": "leetcode",
+    "topic": "图论",
+    "url": "https://leetcode.cn/problems/implement-trie-prefix-tree/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-46",
+    "title": "全排列",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/permutations/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-78",
+    "title": "子集",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/subsets/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-17",
+    "title": "电话号码的字母组合",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/letter-combinations-of-a-phone-number/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-39",
+    "title": "组合总和",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/combination-sum/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-22",
+    "title": "括号生成",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/generate-parentheses/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-79",
+    "title": "单词搜索",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/word-search/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-131",
+    "title": "分割回文串",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/palindrome-partitioning/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-51",
+    "title": "N 皇后",
+    "track": "leetcode",
+    "topic": "回溯",
+    "url": "https://leetcode.cn/problems/n-queens/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-35",
+    "title": "搜索插入位置",
+    "track": "leetcode",
+    "topic": "二分",
+    "url": "https://leetcode.cn/problems/search-insert-position/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-74",
+    "title": "搜索二维矩阵",
+    "track": "leetcode",
+    "topic": "二分",
+    "url": "https://leetcode.cn/problems/search-a-2d-matrix/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-34",
+    "title": "在排序数组中查找元素的第一个和最后一个位置",
+    "track": "leetcode",
+    "topic": "二分",
+    "url": "https://leetcode.cn/problems/find-first-and-last-position-of-element-in-sorted-array/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-33",
+    "title": "搜索旋转排序数组",
+    "track": "leetcode",
+    "topic": "二分",
+    "url": "https://leetcode.cn/problems/search-in-rotated-sorted-array/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-153",
+    "title": "寻找旋转排序数组中的最小值",
+    "track": "leetcode",
+    "topic": "二分",
+    "url": "https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-4",
+    "title": "寻找两个正序数组的中位数",
+    "track": "leetcode",
+    "topic": "二分",
+    "url": "https://leetcode.cn/problems/median-of-two-sorted-arrays/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-20",
+    "title": "有效的括号",
+    "track": "leetcode",
+    "topic": "栈",
+    "url": "https://leetcode.cn/problems/valid-parentheses/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-155",
+    "title": "最小栈",
+    "track": "leetcode",
+    "topic": "栈",
+    "url": "https://leetcode.cn/problems/min-stack/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-394",
+    "title": "字符串解码",
+    "track": "leetcode",
+    "topic": "栈",
+    "url": "https://leetcode.cn/problems/decode-string/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-739",
+    "title": "每日温度",
+    "track": "leetcode",
+    "topic": "栈",
+    "url": "https://leetcode.cn/problems/daily-temperatures/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-84",
+    "title": "柱状图中最大的矩形",
+    "track": "leetcode",
+    "topic": "栈",
+    "url": "https://leetcode.cn/problems/largest-rectangle-in-histogram/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-215",
+    "title": "数组中的第 K 个最大元素",
+    "track": "leetcode",
+    "topic": "堆",
+    "url": "https://leetcode.cn/problems/kth-largest-element-in-an-array/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-347",
+    "title": "前 K 个高频元素",
+    "track": "leetcode",
+    "topic": "堆",
+    "url": "https://leetcode.cn/problems/top-k-frequent-elements/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-295",
+    "title": "数据流的中位数",
+    "track": "leetcode",
+    "topic": "堆",
+    "url": "https://leetcode.cn/problems/find-median-from-data-stream/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-121",
+    "title": "买卖股票的最佳时机",
+    "track": "leetcode",
+    "topic": "贪心",
+    "url": "https://leetcode.cn/problems/best-time-to-buy-and-sell-stock/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-55",
+    "title": "跳跃游戏",
+    "track": "leetcode",
+    "topic": "贪心",
+    "url": "https://leetcode.cn/problems/jump-game/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-45",
+    "title": "跳跃游戏 II",
+    "track": "leetcode",
+    "topic": "贪心",
+    "url": "https://leetcode.cn/problems/jump-game-ii/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-763",
+    "title": "划分字母区间",
+    "track": "leetcode",
+    "topic": "贪心",
+    "url": "https://leetcode.cn/problems/partition-labels/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-70",
+    "title": "爬楼梯",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/climbing-stairs/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-118",
+    "title": "杨辉三角",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/pascals-triangle/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-198",
+    "title": "打家劫舍",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/house-robber/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-279",
+    "title": "完全平方数",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/perfect-squares/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-322",
+    "title": "零钱兑换",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/coin-change/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-139",
+    "title": "单词拆分",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/word-break/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-300",
+    "title": "最长递增子序列",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/longest-increasing-subsequence/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-152",
+    "title": "乘积最大子数组",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/maximum-product-subarray/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-416",
+    "title": "分割等和子集",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/partition-equal-subset-sum/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-32",
+    "title": "最长有效括号",
+    "track": "leetcode",
+    "topic": "动态规划",
+    "url": "https://leetcode.cn/problems/longest-valid-parentheses/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-62",
+    "title": "不同路径",
+    "track": "leetcode",
+    "topic": "多维动态规划",
+    "url": "https://leetcode.cn/problems/unique-paths/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-64",
+    "title": "最小路径和",
+    "track": "leetcode",
+    "topic": "多维动态规划",
+    "url": "https://leetcode.cn/problems/minimum-path-sum/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-5",
+    "title": "最长回文子串",
+    "track": "leetcode",
+    "topic": "多维动态规划",
+    "url": "https://leetcode.cn/problems/longest-palindromic-substring/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-1143",
+    "title": "最长公共子序列",
+    "track": "leetcode",
+    "topic": "多维动态规划",
+    "url": "https://leetcode.cn/problems/longest-common-subsequence/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-72",
+    "title": "编辑距离",
+    "track": "leetcode",
+    "topic": "多维动态规划",
+    "url": "https://leetcode.cn/problems/edit-distance/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-136",
+    "title": "只出现一次的数字",
+    "track": "leetcode",
+    "topic": "技巧",
+    "url": "https://leetcode.cn/problems/single-number/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-169",
+    "title": "多数元素",
+    "track": "leetcode",
+    "topic": "技巧",
+    "url": "https://leetcode.cn/problems/majority-element/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-75",
+    "title": "颜色分类",
+    "track": "leetcode",
+    "topic": "技巧",
+    "url": "https://leetcode.cn/problems/sort-colors/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-31",
+    "title": "下一个排列",
+    "track": "leetcode",
+    "topic": "技巧",
+    "url": "https://leetcode.cn/problems/next-permutation/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "lc-287",
+    "title": "寻找重复数",
+    "track": "leetcode",
+    "topic": "技巧",
+    "url": "https://leetcode.cn/problems/find-the-duplicate-number/",
+    "prompt": "阅读原题，用 Python 提交代码；说明思路、时间/空间复杂度，自己设计至少两个边界测试。"
+  },
+  {
+    "id": "code-01",
+    "title": "数值稳定的 Softmax",
+    "track": "llm_code",
+    "prompt": "实现 stable_softmax(logits)，输入有限浮点数的一维列表，禁止调用现成 softmax；输出概率列表。用 [1000,1001,1002]、单元素、重复值验证；约定空列表抛出 ValueError。解释数值稳定性。"
+  },
+  {
+    "id": "code-02",
+    "title": "交叉熵与 log-sum-exp",
+    "track": "llm_code",
+    "prompt": "输入 batch logits 和类别索引，实现平均交叉熵，不调用现成 loss；验证大 logits 不溢出，推导单样本梯度。"
+  },
+  {
+    "id": "code-03",
+    "title": "Scaled Dot-Product Attention",
+    "track": "llm_code",
+    "prompt": "用 PyTorch 基础张量算子实现 Q/K/V attention，先限定相同 batch/head 数，支持 causal mask；说明 shape 和缩放。禁止调用现成 attention。"
+  },
+  {
+    "id": "code-04",
+    "title": "Padding 与 causal mask",
+    "track": "llm_code",
+    "prompt": "为 attention 组合 padding 和 causal mask；明确 True 表示可见还是屏蔽，并定义整行被屏蔽时的输出策略，检查 NaN。"
+  },
+  {
+    "id": "code-05",
+    "title": "Multi-Head Attention",
+    "track": "llm_code",
+    "prompt": "实现多头拆分、attention、拼接和输出投影；检查 batch/head/sequence 维度及 d_model 的整除约束。"
+  },
+  {
+    "id": "code-06",
+    "title": "Grouped-Query Attention",
+    "track": "llm_code",
+    "prompt": "实现 Hq 为 Hkv 整数倍的 GQA；构造 head 映射并与重复 K/V 的朴素实现比较。"
+  },
+  {
+    "id": "code-07",
+    "title": "LayerNorm 与 RMSNorm",
+    "track": "llm_code",
+    "prompt": "分别实现最后一维的 LayerNorm、RMSNorm；明确 epsilon、可学习参数和方差约定。"
+  },
+  {
+    "id": "code-08",
+    "title": "RoPE",
+    "track": "llm_code",
+    "prompt": "对 Q/K 的成对通道应用旋转位置编码；验证位置为零、偶数维约束以及增量位置偏移。"
+  },
+  {
+    "id": "code-09",
+    "title": "KV Cache 增量解码",
+    "track": "llm_code",
+    "prompt": "实现单层 attention 的 KV cache 更新；在无 dropout 下对比完整前向与逐 token 解码输出。"
+  },
+  {
+    "id": "code-10",
+    "title": "Top-k / Top-p 采样",
+    "track": "llm_code",
+    "prompt": "给定单条 logits，支持 temperature、top-k、top-p；约定过滤顺序、保留首个跨阈值 token，支持随机种子。"
+  },
+  {
+    "id": "code-11",
+    "title": "Beam Search",
+    "track": "llm_code",
+    "prompt": "给定 next-token 对数概率回调，实现 beam search；处理 EOS、最大长度，明确 length penalty。"
+  },
+  {
+    "id": "code-12",
+    "title": "LoRA Linear",
+    "track": "llm_code",
+    "prompt": "实现冻结基础权重的 LoRA 线性层；明确 A/B shape、alpha/r 缩放和可训练参数，验证 merge 前后输出一致。"
+  },
+  {
+    "id": "code-13",
+    "title": "SwiGLU",
+    "track": "llm_code",
+    "prompt": "用基础算子实现 SwiGLU FFN；标注三组投影矩阵形状，并计算参数量。"
+  },
+  {
+    "id": "code-14",
+    "title": "Decoder Block",
+    "track": "llm_code",
+    "prompt": "组合 pre-norm、causal attention、残差和 FFN；验证输入输出 shape 与梯度流。"
+  },
+  {
+    "id": "code-15",
+    "title": "Next-token SFT Loss",
+    "track": "llm_code",
+    "prompt": "对 logits/labels 做 next-token 对齐，屏蔽 padding 和非 assistant 标签；处理整批无有效标签。"
+  },
+  {
+    "id": "code-16",
+    "title": "梯度累积",
+    "track": "llm_code",
+    "prompt": "写微批次梯度累积训练循环，正确缩放 loss、清零梯度并处理尾批；与完整 batch 梯度对齐。"
+  },
+  {
+    "id": "code-17",
+    "title": "DPO Loss",
+    "track": "llm_code",
+    "prompt": "输入 chosen/rejected 的 policy/reference 序列 logprob 实现 DPO loss；用 log-sigmoid 保证稳定，解释 beta。"
+  },
+  {
+    "id": "code-18",
+    "title": "PPO Clipped Loss",
+    "track": "llm_code",
+    "prompt": "实现带 mask 的 PPO clipped surrogate loss，明确 advantage、ratio、clip；验证无有效 token 的策略。"
+  },
+  {
+    "id": "code-19",
+    "title": "检索与 Recall@k",
+    "track": "llm_code",
+    "prompt": "给定 query/document 向量，实现余弦 top-k 检索和 Recall@k；定义零向量及多个相关文档的处理。"
+  },
+  {
+    "id": "code-20",
+    "title": "简化 BPE",
+    "track": "llm_code",
+    "prompt": "实现小语料上的 BPE merge 学习与编码；约定词边界及并列频次规则，演示未见文本编码。"
+  },
+  {
+    "id": "qa-01",
+    "title": "Attention 缩放",
+    "track": "llm_qa",
+    "prompt": "为什么 attention 分数通常除以 sqrt(d_k)？从 Q、K 各维独立、零均值、单位方差的假设出发，解释点积方差、softmax 与梯度，并说明假设的限制。"
+  },
+  {
+    "id": "qa-02",
+    "title": "Q/K/V 与自注意力",
+    "track": "llm_qa",
+    "prompt": "解释 Q、K、V 的角色、来源和 shape；self-attention 与 cross-attention 有何不同？"
+  },
+  {
+    "id": "qa-03",
+    "title": "Causal Mask",
+    "track": "llm_qa",
+    "prompt": "为什么自回归训练要屏蔽未来 token？训练并行计算与推理逐步生成如何兼容？"
+  },
+  {
+    "id": "qa-04",
+    "title": "多头注意力",
+    "track": "llm_qa",
+    "prompt": "多头相对单头提供了什么？固定 d_model 时解释参数量和计算量的主要项。"
+  },
+  {
+    "id": "qa-05",
+    "title": "Transformer 三种架构",
+    "track": "llm_qa",
+    "prompt": "比较 encoder-only、decoder-only、encoder-decoder 的 mask、训练目标和适用任务。"
+  },
+  {
+    "id": "qa-06",
+    "title": "位置编码与 RoPE",
+    "track": "llm_qa",
+    "prompt": "为什么 attention 需要位置信息？解释绝对位置、相对位置、RoPE，区分位置外推方法与实际效果。"
+  },
+  {
+    "id": "qa-07",
+    "title": "Pre-Norm 与 Post-Norm",
+    "track": "llm_qa",
+    "prompt": "比较两种残差归一化顺序、梯度路径与训练稳定性；RMSNorm 去掉了什么？"
+  },
+  {
+    "id": "qa-08",
+    "title": "Tokenizer",
+    "track": "llm_qa",
+    "prompt": "比较 BPE、WordPiece、Unigram 的基本思路，说明词表大小、字节回退、中文和特殊 token。"
+  },
+  {
+    "id": "qa-09",
+    "title": "Next-token 训练",
+    "track": "llm_qa",
+    "prompt": "解释 teacher forcing、label shift、padding mask 与 perplexity；哪些情况下不同模型的 PPL 不能直接比较？"
+  },
+  {
+    "id": "qa-10",
+    "title": "解码策略",
+    "track": "llm_qa",
+    "prompt": "比较 greedy、beam search、temperature、top-k、top-p；讨论多样性、重复和可复现性。"
+  },
+  {
+    "id": "qa-11",
+    "title": "KV Cache",
+    "track": "llm_qa",
+    "prompt": "为什么 cache K/V 而通常不保留旧 Q？写出 cache 显存与 batch、层数、长度、KV heads 的关系。"
+  },
+  {
+    "id": "qa-12",
+    "title": "MHA / MQA / GQA",
+    "track": "llm_qa",
+    "prompt": "比较三者 head 组织、KV cache 大小和推理取舍，说明 Hq 与 Hkv 的约束。"
+  },
+  {
+    "id": "qa-13",
+    "title": "FlashAttention",
+    "track": "llm_qa",
+    "prompt": "解释 attention 的显存访问瓶颈、分块与 online softmax；区分算术复杂度和显存占用。"
+  },
+  {
+    "id": "qa-14",
+    "title": "Prefill 与 Decode",
+    "track": "llm_qa",
+    "prompt": "比较 prefill/decode 的计算特征，解释 TTFT、TPOT、吞吐和连续批处理。"
+  },
+  {
+    "id": "qa-15",
+    "title": "量化",
+    "track": "llm_qa",
+    "prompt": "解释权重/激活量化、per-channel/per-tensor、对称/非对称量化以及 outlier；区分量化与降低浮点精度。"
+  },
+  {
+    "id": "qa-16",
+    "title": "LoRA 与 QLoRA",
+    "track": "llm_qa",
+    "prompt": "推导 LoRA 参数量，说明初始化和 merge；QLoRA 冻结什么、训练什么，显存主要花在哪里？"
+  },
+  {
+    "id": "qa-17",
+    "title": "SFT 数据与 Loss",
+    "track": "llm_qa",
+    "prompt": "说明 instruction 数据格式、assistant-only loss、packing、去重与数据泄漏检查。"
+  },
+  {
+    "id": "qa-18",
+    "title": "偏好学习与 RLHF",
+    "track": "llm_qa",
+    "prompt": "解释偏好数据、reward model、策略优化以及 KL 约束；列出 reward hacking 风险。"
+  },
+  {
+    "id": "qa-19",
+    "title": "DPO",
+    "track": "llm_qa",
+    "prompt": "解释 DPO 的输入、参考模型和 beta；与 PPO 的训练资源、数据和优化方式有什么不同？"
+  },
+  {
+    "id": "qa-20",
+    "title": "PPO / GRPO",
+    "track": "llm_qa",
+    "prompt": "解释 PPO ratio clipping 和 advantage；说明 GRPO 的组内相对奖励、采样组及常见失败模式，避免把实现变体当统一标准。"
+  },
+  {
+    "id": "qa-21",
+    "title": "训练显存估算",
+    "track": "llm_qa",
+    "prompt": "分别估算权重、梯度、优化器状态、激活和临时张量；说明精度与分布式分片的影响。"
+  },
+  {
+    "id": "qa-22",
+    "title": "混合精度与梯度累积",
+    "track": "llm_qa",
+    "prompt": "比较 FP16/BF16、loss scaling；梯度累积何时等价于大 batch，何时受 dropout、归一化或 loss 归约影响？"
+  },
+  {
+    "id": "qa-23",
+    "title": "分布式训练",
+    "track": "llm_qa",
+    "prompt": "比较数据、张量、流水线并行；解释 ZeRO 各阶段分片对象和通信代价。"
+  },
+  {
+    "id": "qa-24",
+    "title": "Checkpointing",
+    "track": "llm_qa",
+    "prompt": "解释 activation checkpointing 为什么省显存、增加哪些计算，以及随机状态与重计算的注意点。"
+  },
+  {
+    "id": "qa-25",
+    "title": "RAG 全流程",
+    "track": "llm_qa",
+    "prompt": "设计解析、分块、embedding、检索、rerank、生成、引用流程；说明每环节如何单独评估。"
+  },
+  {
+    "id": "qa-26",
+    "title": "检索与重排",
+    "track": "llm_qa",
+    "prompt": "比较稀疏/稠密/混合检索、bi-encoder/cross-encoder；解释 Recall@k、MRR、nDCG 各自侧重。"
+  },
+  {
+    "id": "qa-27",
+    "title": "RAG vs 微调",
+    "track": "llm_qa",
+    "prompt": "给定知识更新、风格行为学习、敏感权限三个需求，选择 RAG、SFT 或组合并说明依据。"
+  },
+  {
+    "id": "qa-28",
+    "title": "幻觉与评测",
+    "track": "llm_qa",
+    "prompt": "区分知识缺失、检索失误和生成失真；设计有引用正确性、拒答和人工抽检的评测。"
+  },
+  {
+    "id": "qa-29",
+    "title": "长上下文",
+    "track": "llm_qa",
+    "prompt": "解释长上下文的训练/推理成本、位置编码与有效信息利用；设计 needle 测试并说明其局限。"
+  },
+  {
+    "id": "qa-30",
+    "title": "项目深挖",
+    "track": "llm_qa",
+    "prompt": "用一个真实或拟建 LLM 项目讲清目标、基线、数据、指标、消融、延迟成本和失败案例；没有做过的部分明确标注。"
+  }
+]
+;
