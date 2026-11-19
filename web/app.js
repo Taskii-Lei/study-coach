@@ -83,7 +83,7 @@ function renderSubmissions(){
   $('submission-count').textContent=rows.length;
   $('history-actions').classList.toggle('hidden',!rows.length);
   submissionStatus();
-  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>${escape(s.result?officialLabel(s.result.status):'已保存 · 尚未判题')}</h4>${s.result?officialResultHTML(s.result):''}<small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
+  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>${escape(s.result?officialLabel(s.result):'已保存 · 尚未判题')}</h4>${s.result?officialResultHTML(s.result):''}<small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
   const h=state.history.filter(h=>h.id===selected).slice().reverse();
   if(h.length)$('submission-history').innerHTML+=h.map(r=>`<article class="history-item"><h4>${r.source==='self'?'自评记录':'教练反馈'} · ${r.score} / 4</h4><small>${r.date} · 下次复习 ${r.due}</small><p>${escape(r.feedback)}</p></article>`).join('');
 }
@@ -158,7 +158,7 @@ async function importData(file){
 function renderStatsAndQuestion(){renderStats();renderQuestion();}
 function submissionStatus(message,kind='success'){
   const el=$('submission-status'),rows=state.submissions.filter(s=>s.id===selected),latest=rows[rows.length-1],d=state.drafts[selected];
-  if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':latest.result?officialLabel(latest.result.status):`最近一次提交已保存（${formatTime(latest.at)}），尚未判题。`;kind=changed?'pending':latest.result?.status==='accepted'?'success':'pending';}
+  if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':latest.result?officialSummary(latest.result):`最近一次提交已保存（${formatTime(latest.at)}），尚未判题。`;kind=changed?'pending':latest.result?.status==='accepted'?'success':'pending';}
   el.textContent=message||'';el.className='submission-status '+(message?kind:'hidden');
 }
 function submit(){
@@ -175,9 +175,12 @@ function submit(){
   toast('答案已提交，已打开提交记录。');
 }
 const OFFICIAL_LABELS={pending:'已提交 · 等待官方结果',accepted:'通过 · Accepted',wrong_answer:'答案错误 · Wrong Answer',time_limit:'超时 · Time Limit Exceeded',memory_limit:'超出内存限制',output_limit:'超出输出限制',runtime_error:'运行错误 · Runtime Error',compile_error:'编译 / 语法错误',internal_error:'力扣判题服务错误',connection_error:'连接未完成 · 请查看详情',cancelled:'已停止等待'};
-function officialLabel(status){return OFFICIAL_LABELS[status]||'等待力扣判题';}
+function officialLabel(value){const r=typeof value==='object'?value:null,status=r?r.status:value;return status==='connection_error'&&r?LC.failureInfo(r).title:OFFICIAL_LABELS[status]||'等待力扣判题';}
+function officialSummary(r){const title=officialLabel(r);return r.status==='connection_error'&&r.error?title+'：'+r.error:title;}
 function officialResultHTML(r){
-  let html=`<div class="official-result ${r.status==='accepted'?'accepted':['connection_error','cancelled','pending'].includes(r.status)?'pending':'failed'}"><b>力扣官方判题</b>`;
+  const failure=r.status==='connection_error'?LC.failureInfo(r):null;
+  let html=`<div class="official-result ${r.status==='accepted'?'accepted':['connection_error','cancelled','pending'].includes(r.status)?'pending':'failed'}"><b>${failure?'连接未完成，尚无正式判题结果':'力扣官方判题'}</b>`;
+  if(failure)html+=`<p class="connection-next-step">${escape(failure.action)}</p><p class="fine-print">错误类型：${escape(failure.code)}</p>`;
   if(r.total)html+=`<p>${Number(r.passed)||0} / ${Number(r.total)} 个用例通过</p>`;
   if(r.runtime||r.memory)html+=`<p>耗时 ${escape(r.runtime||'—')} · 内存 ${escape(r.memory||'—')}</p>`;
   for(const [key,label] of [['input','失败用例'],['expected','预期输出'],['actual','实际输出'],['error','错误详情']])if(r[key])html+=`<details open><summary>${label}</summary><pre>${escape(r[key])}</pre></details>`;
@@ -217,12 +220,12 @@ async function submitOfficial(){
   try{
     record.result=await task.promise;
     if(record.result.status==='accepted')markOfficialCompletion(record.id,C.dayKey(new Date(record.at)));
-  }catch(error){record.result={provider:'leetcode',status:error.code==='cancelled'?'cancelled':'connection_error',error:error.message||'连接力扣失败',...((error.submissionUrl||record.result?.submissionUrl)?{submissionUrl:error.submissionUrl||record.result?.submissionUrl}:{})};}
+  }catch(error){record.result={provider:'leetcode',status:error.code==='cancelled'?'cancelled':'connection_error',errorCode:error.code||'network_error',error:error.message||'连接力扣失败',...((error.submissionUrl||record.result?.submissionUrl)?{submissionUrl:error.submissionUrl||record.result?.submissionUrl}:{})};}
   finally{
     activeOfficial=null;
     const saved=persist();renderStatsAndQuestion();renderLeetCodeConnection();
-    if(selected===record.id){setTab('history');submissionStatus(saved?officialLabel(record.result.status):'官方结果已返回，但存档写入失败，请先导出备份。',saved&&record.result.status==='accepted'?'success':saved?'pending':'error');}
-    else toast(byId.get(record.id).title+'：'+officialLabel(record.result.status));
+    if(selected===record.id){setTab('history');submissionStatus(saved?officialSummary(record.result):'官方结果已返回，但存档写入失败，请先导出备份。',saved&&record.result.status==='accepted'?'success':saved?'pending':'error');}
+    else toast(byId.get(record.id).title+'：'+officialSummary(record.result));
   }
 }
 async function syncLeetCode(){
@@ -245,7 +248,7 @@ async function copyAnswer(snapshot){
   const savedAnswer=snapshot&&typeof snapshot.answer==='string';if(!savedAnswer)saveDraft();const q=byId.get(selected),d=savedAnswer?snapshot:state.drafts[selected];
   if(!d.answer.trim()){toast('请先写一些代码或思路。');return;}
   const official=snapshot?.result;
-  const officialFeedback=official?'\n\n力扣反馈：'+officialLabel(official.status)+'\n失败用例：'+(official.input||'—')+'\n预期：'+(official.expected||'—')+'\n实际：'+(official.actual||'—')+'\n错误：'+(official.error||'—'):'';
+  const officialFeedback=official?'\n\n力扣反馈：'+officialLabel(official)+'\n失败用例：'+(official.input||'—')+'\n预期：'+(official.expected||'—')+'\n实际：'+(official.actual||'—')+'\n错误：'+(official.error||'—'):'';
   const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${state.hints[q.id]||0}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}\n\n如需同步网页反馈，请提供包含本题记录的 coach.py progress.json，或按网页自评量表说明评分。${officialFeedback}`;
   try{await navigator.clipboard.writeText(text);toast('已复制。粘贴到当前 Codex 聊天即可批改。');}catch(e){showDialog('复制给教练','<p>浏览器无法自动复制，请选中下方内容复制。</p><textarea id="copy-fallback" class="reflection" style="height:260px" readonly></textarea>');$('copy-fallback').value=text;$('copy-fallback').select();}
 }

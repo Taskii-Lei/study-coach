@@ -60,7 +60,7 @@
         const r=s.result,states=['pending','accepted','wrong_answer','memory_limit','output_limit','time_limit','runtime_error','compile_error','internal_error','connection_error','cancelled'];
         if(r.provider!=='leetcode'||!states.includes(r.status))throw Error('备份中的力扣结果无效。');
         row.result={provider:'leetcode',status:r.status};
-        for(const field of ['submissionId','questionId','runtime','memory','input','expected','actual','error','officialMessage','receivedAt'])if(r[field]!=null)row.result[field]=String(r[field]).slice(0,8000);
+        for(const field of ['submissionId','questionId','runtime','memory','input','expected','actual','error','errorCode','phase','officialMessage','receivedAt'])if(r[field]!=null)row.result[field]=String(r[field]).slice(0,8000);
         if(r.submissionUrl&&/^https:\/\/leetcode\.cn\/submissions\/detail\/\d+\/$/.test(r.submissionUrl))row.result.submissionUrl=r.submissionUrl;
         for(const field of ['passed','total'])if(Number.isFinite(r[field])&&r[field]>=0)row.result[field]=r[field];
       }

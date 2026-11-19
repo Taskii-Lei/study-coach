@@ -74,3 +74,15 @@ test('old-project recent-AC synchronization preserves empty results as unknown r
  const env=await backgroundScenario();const response=await env.send({action:'sync',requestId:'sync',username:'example'});
  assert.equal(response.ok,true);assert.equal(response.result.submissions.length,0);assert.ok(env.calls[0].options.body.includes('recentACSubmissions'));
 });
+test('connection errors show specific causes and next actions, including saved legacy failures',()=>{
+ const window={LEETCODE_PROBLEMS:problems,addEventListener(){},postMessage(){}};
+ vm.runInNewContext(fs.readFileSync(require('node:path').join(__dirname,'../web/leetcode.js'),'utf8'),{window,location:{origin:'https://taskii-lei.github.io'},setInterval:()=>0,setTimeout:()=>0,clearInterval(){},clearTimeout(){},crypto:{randomUUID:()=> 'r'}});
+ const describe=window.LeetCodeClient.failureInfo;
+ assert.match(describe({errorCode:'login_required',error:'HTTP 401'}).title,/未登录/);
+ assert.equal(describe({error:'力扣拒绝了请求 HTTP 403'}).code,'site_blocked');
+ assert.match(describe({error:'Extension context invalidated.'}).action,/重新加载扩展/);
+ assert.match(describe({errorCode:'poll_timeout',error:'too slow'}).action,/已经发往力扣|官方提交记录/);
+ assert.equal(describe({errorCode:'submit_error',error:'not submitted'}).code,'submit_error');
+ const state=C.emptyState();state.submissions=[{id:'lc-1',at:'2026-11-19',answer:'pass',reflection:'',result:{provider:'leetcode',status:'connection_error',errorCode:'login_required',error:'please login'}}];
+ assert.equal(C.importState(state,catalog).submissions[0].result.errorCode,'login_required');
+});
