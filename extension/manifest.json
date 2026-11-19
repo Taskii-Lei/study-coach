@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "循序 · 力扣判题桥接",
+  "version": "1.0.0",
+  "description": "在循序学习网页提交 Python 代码，由你已登录的力扣账号完成官方判题并回传结果。",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://leetcode.cn/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://taskii-lei.github.io/study-coach/",
+        "https://taskii-lei.github.io/study-coach/*"
+      ],
+      "js": [
+        "bridge.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "循序力扣判题：在学习网页提交答案"
+  }
+}

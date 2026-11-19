@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: node --check web/app.js && node --check web/core.js
+      - run: node --check web/app.js && node --check web/core.js && node --check extension/background.js && node --check extension/bridge.js
       - run: node --test tests/*.test.cjs
       - run: python -m unittest discover -s tests -v
       - name: Check deployment assets

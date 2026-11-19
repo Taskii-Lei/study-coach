@@ -1,5 +1,7 @@
 (() => {
 'use strict';
+const LC=window.LeetCodeClient;
+let activeOfficial=null;
 const C = window.CoachCore, catalog = window.CURRICULUM, byId = new Map(catalog.map(q => [q.id,q]));
 const $ = id => document.getElementById(id), KEY = 'xunxu-study-coach-v2';
 const titles = {today:'今日学习',bank:'全部题库',review:'复习计划',progress:'学习记录',settings:'学习设置'};
@@ -8,8 +10,10 @@ const durations = {leetcode:30,llm_code:20,llm_qa:10};
 const trackColors = {leetcode:'purple',llm_code:'teal',llm_qa:'amber'};
 let state=C.emptyState(), day=C.dayKey(), selected, tab='problem', currentView='today', toastTimeout, timerEnd=0, remaining=30*60000, timerLast=0, lastTickSave=0, saveFailed=false;
 try { const raw=localStorage.getItem(KEY); if(raw) state=C.importState(JSON.parse(raw),catalog); } catch(e) { saveFailed=true; setTimeout(()=>showDialog('存档需要检查','<p>浏览器中的存档无法读取，暂未覆盖原记录。请先使用浏览器备份原数据，再清理或导入有效备份。</p>'),300); }
+state.leetcode ||= {username:'',roundStart:day,accepted:{}};if(!state.leetcode.roundStart)state.leetcode.roundStart=day;
 let tasks=C.plan(state,catalog,day);
 selected=tasks.find(t=>!t.done)?.id || tasks[0]?.id || catalog[0].id;
+for(const q of catalog.filter(q=>q.track==='leetcode')){const d=state.drafts[q.id];if(d&&d.answer==='# 思路：\n\n# 在这里开始你的 Python 实现\n'&&!d.reflection)d.answer=LC.starter(q.id);}
 function persist(){
   if(saveFailed){$('save-status').textContent='存档未写入 · 请先备份';return false;}
   try{localStorage.setItem(KEY,JSON.stringify(state));$('save-status').textContent='已保存在此浏览器';return true;}catch(e){$('save-status').textContent='保存失败 · 请导出备份';toast('浏览器存储不可用或已满，请立即导出备份。');return false;}
@@ -18,12 +22,13 @@ function escape(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function toast(message){clearTimeout(toastTimeout);$('toast').textContent=message;$('toast').classList.add('show');toastTimeout=setTimeout(()=>$('toast').classList.remove('show'),3500);}
 function showDialog(title,content){$('dialog-title').textContent=title;$('dialog-content').innerHTML=content;$('info-dialog').showModal();}
 function empty(message){return `<div class="empty"><span>✧</span>${escape(message)}</div>`;}
-function qstatus(q){const p=state.progress[q.id];return !p?'尚未练习':p.due<=day?'待复习':p.source==='self'?'已自评':'已反馈';}
+function hasPracticed(id){return !!state.progress[id]||!!state.leetcode.accepted[id]||state.submissions.some(s=>s.id===id);}
+function qstatus(q){if(state.leetcode.accepted[q.id]||state.submissions.some(s=>s.id===q.id&&s.result?.status==='accepted'))return '力扣已通过';const p=state.progress[q.id];return !p?'尚未练习':p.due<=day?'待复习':p.source==='self'?'已自评':'已反馈';}
 function draft(q){
   if(!state.drafts[q.id]) state.drafts[q.id]={answer:starter(q),reflection:''};
   return state.drafts[q.id];
 }
-function starter(q){
+function starter(q){if(q.track==='leetcode')return LC.starter(q.id)||'# 实现后提交到力扣官方判题\n';
   if(q.id==='lc-1')return 'class Solution:\n    def twoSum(self, nums: list[int], target: int) -> list[int]:\n        # 先写下你的思路\n        pass\n';
   if(q.id==='code-01')return 'import math\n\ndef stable_softmax(logits: list[float]) -> list[float]:\n    # 实现数值稳定的 softmax\n    pass\n';
   if(q.track==='llm_qa')return '我的理解：\n\n原理与假设：\n\n例子或边界：\n';
@@ -37,7 +42,7 @@ function renderStats(){
   $('today-count').textContent=tasks.filter(t=>!t.done).length;
   $('completion-message').textContent=done===tasks.length && done?'今日目标完成，记得休息':done?'每一个小步，都算数':'从第一道题开始就很好';
   const due=Object.values(state.progress).filter(p=>p.due<=day).length;
-  $('practiced').textContent=Object.keys(state.progress).length;$('review-count').textContent=due;
+  $('practiced').textContent=catalog.filter(q=>hasPracticed(q.id)).length;$('review-count').textContent=due;
   $('review-summary').textContent=due?`${due} 道题到了复习时间`:'完成后，会自动安排间隔复习';
   const date=new Date(day+'T12:00:00+08:00');
   document.querySelector('.eyebrow').textContent=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'long',day:'numeric',weekday:'long'}).format(date)+' · 你的每日进步计划';
@@ -70,6 +75,7 @@ function renderQuestion(){
   $('complete-task').disabled=p?.date===day;
   $('complete-task').textContent=p?.date===day?`已记录 · ${p.due} 复习`:'记录自评与复习';
   $('hint-output').classList.add('hidden');
+  renderLeetCodeConnection();
   updateLines();renderSubmissions();setTab(tab);renderTasks();
 }
 function renderSubmissions(){
@@ -77,7 +83,7 @@ function renderSubmissions(){
   $('submission-count').textContent=rows.length;
   $('history-actions').classList.toggle('hidden',!rows.length);
   submissionStatus();
-  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>已提交 · 待教练批改</h4><small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
+  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>${escape(s.result?officialLabel(s.result.status):'已保存 · 尚未判题')}</h4>${s.result?officialResultHTML(s.result):''}<small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
   const h=state.history.filter(h=>h.id===selected).slice().reverse();
   if(h.length)$('submission-history').innerHTML+=h.map(r=>`<article class="history-item"><h4>${r.source==='self'?'自评记录':'教练反馈'} · ${r.score} / 4</h4><small>${r.date} · 下次复习 ${r.due}</small><p>${escape(r.feedback)}</p></article>`).join('');
 }
@@ -89,12 +95,12 @@ function showView(view){if(!titles[view])view='today';const hero={today:['把今
 function row(q,meta,action='练习'){return `<div class="bank-row"><i class="dot ${trackColors[q.track]}"></i><div><h3>${q.track==='leetcode'?q.id.slice(3)+'. ':''}${escape(q.title)}</h3><p>${trackNames[q.track]} · ${escape(q.topic || 'LLM 核心基础')}</p></div><span>${escape(meta)}</span><button class="button secondary" data-question="${q.id}">${action}</button></div>`;}
 function renderBank(){
   const search=$('search').value.trim().toLowerCase(),track=$('track-filter').value,status=$('status-filter').value;
-  const qs=CURRICULUM.filter(q=>(track==='all'||q.track===track)&&`${q.id} ${q.title} ${q.topic||''}`.toLowerCase().includes(search)).filter(q=>{const p=state.progress[q.id];return status==='all'||status==='new'&&!p||status==='due'&&p?.due<=day||status==='practiced'&&!!p;});
+  const qs=CURRICULUM.filter(q=>(track==='all'||q.track===track)&&`${q.id} ${q.title} ${q.topic||''}`.toLowerCase().includes(search)).filter(q=>{const p=state.progress[q.id];return status==='all'||status==='new'&&!hasPracticed(q.id)||status==='due'&&p?.due<=day||status==='practiced'&&hasPracticed(q.id);});
   $('bank-results').innerHTML=`<div class="bank-result-count">找到 ${qs.length} 道题 · 自由练习不会增加今日必做任务</div>`+(qs.length?qs.map(q=>row(q,state.progress[q.id]?`${state.progress[q.id].score}/4 · ${state.progress[q.id].due} 复习`:'尚未练习')).join(''):empty('没有匹配的题目，换个关键词试试。'));
 }
 function renderReview(){const qs=CURRICULUM.filter(q=>state.progress[q.id]).sort((a,b)=>state.progress[a.id].due.localeCompare(state.progress[b.id].due));$('review-list').innerHTML=qs.length?qs.map(q=>row(q,`${state.progress[q.id].due} · ${state.progress[q.id].due<=day?'已到期':'待复习'}`,'再练一次')).join(''):empty('还没有复习任务。完成一次作答并记录理解程度，就会生成复习计划。');}
 function renderProgress(){
-  $('track-progress').innerHTML=Object.keys(trackNames).map(t=>{const total=CURRICULUM.filter(q=>q.track===t).length,count=CURRICULUM.filter(q=>q.track===t&&state.progress[q.id]).length;return `<div><h3>${trackNames[t]}</h3><strong>${count}</strong><small> / ${total} 题</small><p class="fine-print">已练习 ${Math.round(count/total*100)}%</p></div>`;}).join('');
+  $('track-progress').innerHTML=Object.keys(trackNames).map(t=>{const total=CURRICULUM.filter(q=>q.track===t).length,count=CURRICULUM.filter(q=>q.track===t&&hasPracticed(q.id)).length;return `<div><h3>${trackNames[t]}</h3><strong>${count}</strong><small> / ${total} 题</small><p class="fine-print">已练习 ${Math.round(count/total*100)}%</p></div>`;}).join('');
   const h=state.history.slice().reverse();$('activity-list').innerHTML=h.length?h.map(r=>`<article class="history-item"><h4>${escape(byId.get(r.id)?.title)} · ${r.score} / 4</h4><small>${r.date} · ${r.source==='self'?'自评':'教练反馈'} · 下次复习 ${r.due}</small><p>${escape(r.feedback || '已记录本次理解程度。')}</p></article>`).join(''):empty('你的学习轨迹会出现在这里。今天，就从第一道题开始。');
 }
 function updateLines(){$('line-numbers').textContent=Array.from({length:$('answer-editor').value.split('\n').length},(_,i)=>i+1).join('\n');}
@@ -141,6 +147,10 @@ async function importData(file){
     const submitted=new Set(state.submissions.map(s=>s.id+'|'+s.at));for(const s of incoming.submissions)if(!submitted.has(s.id+'|'+s.at)){state.submissions.push(s);submitted.add(s.id+'|'+s.at);}
     for(const [id,n] of Object.entries(incoming.hints))state.hints[id]=Math.max(state.hints[id]||0,n);
     for(const [d,n] of Object.entries(incoming.focus))state.focus[d]=Math.max(state.focus[d]||0,n);
+    if(incoming.leetcode?.username)state.leetcode.username=incoming.leetcode.username;
+    if(incoming.leetcode?.roundStart)state.leetcode.roundStart=incoming.leetcode.roundStart;
+    for(const [id,r] of Object.entries(incoming.leetcode?.accepted||{}))if(!state.leetcode.accepted[id]||r.submitTime>state.leetcode.accepted[id].submitTime)state.leetcode.accepted[id]=r;
+    $('leetcode-username').value=state.leetcode.username;$('leetcode-round-start').value=state.leetcode.roundStart;
     for(const [d,tasks] of Object.entries(state.days))for(const t of tasks)if(state.progress[t.id]?.date>=d)t.done=true;
     saveFailed=false;persist();tasks=C.plan(state,CURRICULUM,day);renderStatsAndQuestion();showView(currentView);toast('记录已合并；本页已刷新。');
   }catch(e){toast('导入失败：'+e.message);}finally{$('import-file').value='';}
@@ -148,10 +158,11 @@ async function importData(file){
 function renderStatsAndQuestion(){renderStats();renderQuestion();}
 function submissionStatus(message,kind='success'){
   const el=$('submission-status'),rows=state.submissions.filter(s=>s.id===selected),latest=rows[rows.length-1],d=state.drafts[selected];
-  if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':`最近一次提交已保存（${formatTime(latest.at)}）。可在提交记录中查看并复制给教练。`;kind=changed?'pending':'success';}
+  if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':latest.result?officialLabel(latest.result.status):`最近一次提交已保存（${formatTime(latest.at)}），尚未判题。`;kind=changed?'pending':latest.result?.status==='accepted'?'success':'pending';}
   el.textContent=message||'';el.className='submission-status '+(message?kind:'hidden');
 }
 function submit(){
+  if(byId.get(selected).track==='leetcode'){submitOfficial();return;}
   if(!saveDraft()){submissionStatus('提交失败：浏览器未能写入存档。答案仍在编辑器中，请导出备份后重试。','error');return;}
   const d=state.drafts[selected];
   if(!d.answer.trim()){submissionStatus('还没有可提交的答案，请先写下代码或思路。','error');$('answer-editor').focus();return;}
@@ -163,10 +174,79 @@ function submit(){
   renderSubmissions();setTab('history');submissionStatus('提交成功，已保存本次答案。复制给教练可获得批改；右侧可记录自评并安排复习。');
   toast('答案已提交，已打开提交记录。');
 }
+const OFFICIAL_LABELS={pending:'已提交 · 等待官方结果',accepted:'通过 · Accepted',wrong_answer:'答案错误 · Wrong Answer',time_limit:'超时 · Time Limit Exceeded',memory_limit:'超出内存限制',output_limit:'超出输出限制',runtime_error:'运行错误 · Runtime Error',compile_error:'编译 / 语法错误',internal_error:'力扣判题服务错误',connection_error:'连接未完成 · 请查看详情',cancelled:'已停止等待'};
+function officialLabel(status){return OFFICIAL_LABELS[status]||'等待力扣判题';}
+function officialResultHTML(r){
+  let html=`<div class="official-result ${r.status==='accepted'?'accepted':['connection_error','cancelled','pending'].includes(r.status)?'pending':'failed'}"><b>力扣官方判题</b>`;
+  if(r.total)html+=`<p>${Number(r.passed)||0} / ${Number(r.total)} 个用例通过</p>`;
+  if(r.runtime||r.memory)html+=`<p>耗时 ${escape(r.runtime||'—')} · 内存 ${escape(r.memory||'—')}</p>`;
+  for(const [key,label] of [['input','失败用例'],['expected','预期输出'],['actual','实际输出'],['error','错误详情']])if(r[key])html+=`<details open><summary>${label}</summary><pre>${escape(r[key])}</pre></details>`;
+  if(r.submissionUrl&&/^https:\/\/leetcode\.cn\/submissions\/detail\/\d+\/$/.test(r.submissionUrl))html+=`<p><a href="${escape(r.submissionUrl)}" target="_blank" rel="noopener noreferrer">查看力扣官方提交记录</a></p>`;
+  return html+'</div>';
+}
+function renderLeetCodeConnection(){
+  const q=byId.get(selected),enabled=q.track==='leetcode';
+  $('leetcode-connection').classList.toggle('hidden',!enabled);
+  $('leetcode-status').textContent=LC.connected?'力扣扩展已连接 · 官方判题':'力扣扩展未连接';
+  $('install-extension').textContent=LC.connected?'连接说明':'安装扩展';
+  $('official-problem').href=q.url||'https://leetcode.cn/';
+  $('submit-answer').disabled=!!activeOfficial;
+  $('submit-answer').textContent=activeOfficial?'力扣判题中…':enabled?'提交到力扣判题':'提交答案';
+  $('cancel-official').classList.toggle('hidden',!activeOfficial);
+}
+function installExtension(){
+  showDialog('连接力扣官方判题','<p>需要在 Chrome 或 Edge 中打开本网页，并安装一次扩展。</p><ol><li><a href="https://github.com/Taskii-Lei/study-coach/archive/refs/heads/main.zip" target="_blank" rel="noopener noreferrer">下载项目 ZIP</a>并解压。</li><li>打开 <code>chrome://extensions</code>（Edge 使用 <code>edge://extensions</code>），开启「开发者模式」。</li><li>选择「加载已解压的扩展程序」，选中解压后的 <code>extension</code> 文件夹。</li><li>在同一浏览器登录 <a href="https://leetcode.cn/" target="_blank" rel="noopener noreferrer">力扣中国站</a>，然后刷新本网页。</li></ol><p>连接后，点击提交会使用你的力扣账号提交代码，官方结果自动回传。登录会话只在你的浏览器内使用，不上传 GitHub。</p>');
+}
+function markOfficialCompletion(id,at){
+  for(const [d,list] of Object.entries(state.days))if(d<=at)for(const t of list)if(t.id===id)t.done=true;
+}
+async function submitOfficial(){
+  if(activeOfficial)return;
+  if(!saveDraft()){submissionStatus('存档未写入，请先导出备份。','error');return;}
+  if(!LC.connected){submissionStatus('请先连接浏览器扩展，代码尚未提交到力扣。','pending');installExtension();return;}
+  const d=state.drafts[selected];if(!d.answer.trim()){submissionStatus('请先填写代码。','error');return;}
+  const record={id:selected,at:new Date().toISOString(),...d};
+  state.submissions.push(record);
+  if(!persist()){state.submissions.pop();submissionStatus('提交前保存失败，代码尚未发往力扣。','error');return;}
+  renderSubmissions();setTab('history');
+  const task=LC.request('submit',{problemId:record.id,code:record.answer},msg=>{
+    if(msg.submissionId){record.result={provider:'leetcode',status:'pending',submissionId:String(msg.submissionId),submissionUrl:'https://leetcode.cn/submissions/detail/'+msg.submissionId+'/',error:'已交给力扣。若页面刷新后结果尚未回传，请先查看官方记录。'};persist();}
+    if(selected===record.id)submissionStatus(msg.message||'力扣正在判题…','pending');
+  });
+  activeOfficial=task;renderLeetCodeConnection();
+  try{
+    record.result=await task.promise;
+    if(record.result.status==='accepted')markOfficialCompletion(record.id,C.dayKey(new Date(record.at)));
+  }catch(error){record.result={provider:'leetcode',status:error.code==='cancelled'?'cancelled':'connection_error',error:error.message||'连接力扣失败',...((error.submissionUrl||record.result?.submissionUrl)?{submissionUrl:error.submissionUrl||record.result?.submissionUrl}:{})};}
+  finally{
+    activeOfficial=null;
+    const saved=persist();renderStatsAndQuestion();renderLeetCodeConnection();
+    if(selected===record.id){setTab('history');submissionStatus(saved?officialLabel(record.result.status):'官方结果已返回，但存档写入失败，请先导出备份。',saved&&record.result.status==='accepted'?'success':saved?'pending':'error');}
+    else toast(byId.get(record.id).title+'：'+officialLabel(record.result.status));
+  }
+}
+async function syncLeetCode(){
+  state.leetcode.username=$('leetcode-username').value.trim();state.leetcode.roundStart=$('leetcode-round-start').value||day;const cutoff=new Date(state.leetcode.roundStart+'T00:00:00+08:00').getTime()/1000;for(const [id,r] of Object.entries(state.leetcode.accepted))if(r.submitTime<cutoff)delete state.leetcode.accepted[id];persist();
+  if(!LC.connected){$('leetcode-sync-status').textContent='请先连接扩展；未发起同步。';installExtension();return;}
+  const button=$('sync-leetcode');button.disabled=true;$('leetcode-sync-status').textContent='正在读取力扣最近 AC…';
+  try{
+    const result=await LC.request('sync',{username:state.leetcode.username}).promise;
+    const since=new Date(state.leetcode.roundStart+'T00:00:00+08:00').getTime()/1000;let count=0;
+    for(const row of result.submissions){
+      if(!Number.isFinite(row.submitTime)||row.submitTime<since||row.submitTime>Date.now()/1000+300)continue;
+      const q=catalog.find(q=>q.track==='leetcode'&&window.LEETCODE_PROBLEMS[q.id].slug===row.slug);if(!q||!/^\d+$/.test(row.submissionId))continue;
+      const old=state.leetcode.accepted[q.id];if(!old||row.submitTime>old.submitTime)state.leetcode.accepted[q.id]={submissionId:row.submissionId,submitTime:row.submitTime};
+      markOfficialCompletion(q.id,C.dayKey(new Date(row.submitTime*1000)));count++;
+    }
+    persist();renderStatsAndQuestion();$('leetcode-sync-status').textContent=`已同步 ${count} 条本轮 Hot 100 AC。最近记录可能不完整，查不到不代表未通过。`;
+  }catch(error){$('leetcode-sync-status').textContent=error.message||'同步失败，已保留上次记录。';}finally{button.disabled=false;}
+}
 async function copyAnswer(snapshot){
   const savedAnswer=snapshot&&typeof snapshot.answer==='string';if(!savedAnswer)saveDraft();const q=byId.get(selected),d=savedAnswer?snapshot:state.drafts[selected];
   if(!d.answer.trim()){toast('请先写一些代码或思路。');return;}
-  const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${state.hints[q.id]||0}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}\n\n如需同步网页反馈，请提供包含本题记录的 coach.py progress.json，或按网页自评量表说明评分。`;
+  const official=snapshot?.result;
+  const officialFeedback=official?'\n\n力扣反馈：'+officialLabel(official.status)+'\n失败用例：'+(official.input||'—')+'\n预期：'+(official.expected||'—')+'\n实际：'+(official.actual||'—')+'\n错误：'+(official.error||'—'):'';
+  const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${state.hints[q.id]||0}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}\n\n如需同步网页反馈，请提供包含本题记录的 coach.py progress.json，或按网页自评量表说明评分。${officialFeedback}`;
   try{await navigator.clipboard.writeText(text);toast('已复制。粘贴到当前 Codex 聊天即可批改。');}catch(e){showDialog('复制给教练','<p>浏览器无法自动复制，请选中下方内容复制。</p><textarea id="copy-fallback" class="reflection" style="height:260px" readonly></textarea>');$('copy-fallback').value=text;$('copy-fallback').select();}
 }
 function complete(){
@@ -205,9 +285,16 @@ $('help-button').onclick=()=>showDialog('欢迎来到循序','<p>这里是你的
 $('schedule-button').onclick=()=>showDialog('每天 60 分钟，按时开始','<p>北京时间 09:00 出题，21:00 检查。提醒由 Codex 自动化提供；修改时间可在当前聊天告诉教练。</p><ul><li>Hot 100：30 分钟</li><li>LLM 手写：20 分钟</li><li>LLM 面试：10 分钟</li></ul><p>未完成任务顺延；到期复习优先。网页与 Codex 的进度可通过设置中的 JSON 导入、导出交换。</p>');
 $('info-dialog').querySelectorAll('.dialog-close,.dialog-dismiss').forEach(b=>b.onclick=()=>$('info-dialog').close());
 $('info-dialog').addEventListener('click',e=>{if(e.target===$('info-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
-window.addEventListener('beforeunload',()=>{stopTimer();});
+window.addEventListener('beforeunload',()=>{activeOfficial?.cancel();stopTimer();});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')rollover();});
 setInterval(()=>{tick();rollover();},1000);
+$('install-extension').onclick=installExtension;$('settings-install-extension').onclick=installExtension;
+$('sync-leetcode').onclick=syncLeetCode;
+$('cancel-official').onclick=()=>activeOfficial?.cancel();
+$('leetcode-username').value=state.leetcode.username;$('leetcode-round-start').value=state.leetcode.roundStart;
+$('leetcode-username').onchange=()=>{state.leetcode.username=$('leetcode-username').value.trim();persist();};
+$('leetcode-round-start').onchange=()=>{state.leetcode.roundStart=$('leetcode-round-start').value||day;const cutoff=new Date(state.leetcode.roundStart+'T00:00:00+08:00').getTime()/1000;for(const [id,r] of Object.entries(state.leetcode.accepted))if(r.submitTime<cutoff)delete state.leetcode.accepted[id];persist();};
+LC.onConnection(()=>{renderLeetCodeConnection();});
 remaining=durations[byId.get(selected).track]*60000;
 renderStatsAndQuestion();renderClock();showView(location.hash.slice(1)||'today');persist();
 })();

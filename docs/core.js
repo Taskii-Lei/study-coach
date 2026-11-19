@@ -12,7 +12,7 @@
     d.setUTCDate(d.getUTCDate() + count);
     return dayKey(d);
   }
-  function emptyState() { return {version: 2, days: {}, progress: {}, history: [], drafts: {}, submissions: [], hints: {}, focus: {}}; }
+  function emptyState() { return {version: 2, days: {}, progress: {}, history: [], drafts: {}, submissions: [], hints: {}, focus: {}, leetcode: {username:'',roundStart:'',accepted:{}}}; }
   function plan(state, catalog, day) {
     if (state.days[day]) return state.days[day];
     const tasks = [];
@@ -54,7 +54,23 @@
     }
     result.history = input.history.filter(h => known.has(h.id)).map(h => ({id:h.id,...record(h)}));
     for (const [id,d] of Object.entries(input.drafts || {})) if (known.has(id)) result.drafts[id] = {answer:String(d.answer || '').slice(0,300000), reflection:String(d.reflection || '').slice(0,10000)};
-    result.submissions = (Array.isArray(input.submissions) ? input.submissions : []).filter(s => known.has(s.id) && typeof s.at === 'string').map(s => ({id:s.id,at:s.at,answer:String(s.answer || '').slice(0,300000),reflection:String(s.reflection || '').slice(0,10000)}));
+    result.submissions = (Array.isArray(input.submissions) ? input.submissions : []).filter(s => known.has(s.id) && typeof s.at === 'string').map(s => {
+      const row={id:s.id,at:s.at,answer:String(s.answer || '').slice(0,300000),reflection:String(s.reflection || '').slice(0,10000)};
+      if(s.result){
+        const r=s.result,states=['pending','accepted','wrong_answer','memory_limit','output_limit','time_limit','runtime_error','compile_error','internal_error','connection_error','cancelled'];
+        if(r.provider!=='leetcode'||!states.includes(r.status))throw Error('备份中的力扣结果无效。');
+        row.result={provider:'leetcode',status:r.status};
+        for(const field of ['submissionId','questionId','runtime','memory','input','expected','actual','error','officialMessage','receivedAt'])if(r[field]!=null)row.result[field]=String(r[field]).slice(0,8000);
+        if(r.submissionUrl&&/^https:\/\/leetcode\.cn\/submissions\/detail\/\d+\/$/.test(r.submissionUrl))row.result.submissionUrl=r.submissionUrl;
+        for(const field of ['passed','total'])if(Number.isFinite(r[field])&&r[field]>=0)row.result[field]=r[field];
+      }
+      return row;
+    });
+    if(input.leetcode){
+      result.leetcode.username=String(input.leetcode.username||'').slice(0,100);
+      result.leetcode.roundStart=validDate(input.leetcode.roundStart)?input.leetcode.roundStart:'';
+      for(const [id,r] of Object.entries(input.leetcode.accepted||{}))if(known.has(id)&&r&&/^\d+$/.test(String(r.submissionId))&&Number.isFinite(r.submitTime)&&r.submitTime>0)result.leetcode.accepted[id]={submissionId:String(r.submissionId),submitTime:r.submitTime};
+    }
     for (const [id,n] of Object.entries(input.hints || {})) if (known.has(id) && Number.isInteger(n) && n >= 0 && n <= 3) result.hints[id] = n;
     for (const [d,n] of Object.entries(input.focus || {})) if (validDate(d) && Number.isFinite(n) && n >= 0) result.focus[d] = Math.min(n,86400000);
     return result;
