@@ -15,7 +15,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: node --check web/app.js && node --check web/core.js
-      - run: node --test tests/web_core.test.cjs
+      - run: node --test tests/*.test.cjs
       - run: python -m unittest discover -s tests -v
       - name: Check deployment assets
         run: diff -r --exclude=.nojekyll web docs

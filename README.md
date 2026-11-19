@@ -8,7 +8,9 @@
 
 - 今日三项学习清单：算法 30 分钟、LLM 手写 20 分钟、LLM 口述 10 分钟。
 - 150 道题的路线、关键词、练习状态筛选。
-- 作答编辑器、自动保存草稿、提交历史、专注倒计时。
+- 作答编辑器：Python 回车自动缩进、Tab / Shift+Tab 调整选中行，自动保存草稿。
+- 「提交答案」或 Ctrl / Cmd+Enter 保存提交并打开记录，清楚显示成功或存档错误；重复提交不会重复计数。
+- 专注倒计时、提交版本历史，支持把已提交版本复制给教练。
 - 分级学习提示；提示是预编写教学内容，不是在线大模型生成。
 - 显式自评，按 1/3/7/14/30 天安排间隔复习；失败次日重做，未完成顺延。
 - 数据备份导入/导出，兼容同项目 Python 队列的 `progress.json`。
@@ -28,7 +30,7 @@ python3 -m http.server 8765 --bind 127.0.0.1 --directory web
 ## 验证
 
 ```sh
-node --test tests/web_core.test.cjs
+node --test tests/*.test.cjs
 python3 -m unittest discover -s tests -v
 ```
 

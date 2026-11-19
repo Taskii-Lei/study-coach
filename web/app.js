@@ -75,7 +75,9 @@ function renderQuestion(){
 function renderSubmissions(){
   const rows=state.submissions.filter(s=>s.id===selected).slice().reverse();
   $('submission-count').textContent=rows.length;
-  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>已保存提交 · 等待教练反馈</h4><small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
+  $('history-actions').classList.toggle('hidden',!rows.length);
+  submissionStatus();
+  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>已提交 · 待教练批改</h4><small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
   const h=state.history.filter(h=>h.id===selected).slice().reverse();
   if(h.length)$('submission-history').innerHTML+=h.map(r=>`<article class="history-item"><h4>${r.source==='self'?'自评记录':'教练反馈'} · ${r.score} / 4</h4><small>${r.date} · 下次复习 ${r.due}</small><p>${escape(r.feedback)}</p></article>`).join('');
 }
@@ -96,7 +98,7 @@ function renderProgress(){
   const h=state.history.slice().reverse();$('activity-list').innerHTML=h.length?h.map(r=>`<article class="history-item"><h4>${escape(byId.get(r.id)?.title)} · ${r.score} / 4</h4><small>${r.date} · ${r.source==='self'?'自评':'教练反馈'} · 下次复习 ${r.due}</small><p>${escape(r.feedback || '已记录本次理解程度。')}</p></article>`).join(''):empty('你的学习轨迹会出现在这里。今天，就从第一道题开始。');
 }
 function updateLines(){$('line-numbers').textContent=Array.from({length:$('answer-editor').value.split('\n').length},(_,i)=>i+1).join('\n');}
-function saveDraft(){state.drafts[selected]={answer:$('answer-editor').value,reflection:$('reflection').value};persist();}
+function saveDraft(){state.drafts[selected]={answer:$('answer-editor').value,reflection:$('reflection').value};const saved=persist();submissionStatus();return saved;}
 const topicHints={
   哈希:['先想想：遍历时，哪些信息需要快速查到？','用一个可哈希的表示记录已经见过的信息，避免反复扫描。','检查键冲突、重复值和查询/插入顺序；解释额外空间。'],
   双指针:['能否利用位置或排序后的单调性，减少重复比较？','明确左右指针移动的条件，并用不变量说明为什么没有漏解。','用重复值、空区间、最短输入和极端数值检查边界。'],
@@ -144,14 +146,25 @@ async function importData(file){
   }catch(e){toast('导入失败：'+e.message);}finally{$('import-file').value='';}
 }
 function renderStatsAndQuestion(){renderStats();renderQuestion();}
-function submit(){
-  saveDraft();const d=state.drafts[selected];if(!d.answer.trim()){toast('先写下你的思路或代码，再保存提交。');return;}
-  const previous=state.submissions.filter(s=>s.id===selected).at(-1);
-  if(previous&&previous.answer===d.answer&&previous.reflection===d.reflection){toast('这份作答已经保存，可以继续修改或复制给教练。');return;}
-  state.submissions.push({id:selected,at:new Date().toISOString(),...d});if(persist()){renderSubmissions();toast('提交已保存。可复制给 Codex 教练进行批改。');}
+function submissionStatus(message,kind='success'){
+  const el=$('submission-status'),rows=state.submissions.filter(s=>s.id===selected),latest=rows[rows.length-1],d=state.drafts[selected];
+  if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':`最近一次提交已保存（${formatTime(latest.at)}）。可在提交记录中查看并复制给教练。`;kind=changed?'pending':'success';}
+  el.textContent=message||'';el.className='submission-status '+(message?kind:'hidden');
 }
-async function copyAnswer(){
-  saveDraft();const q=byId.get(selected),d=state.drafts[selected];
+function submit(){
+  if(!saveDraft()){submissionStatus('提交失败：浏览器未能写入存档。答案仍在编辑器中，请导出备份后重试。','error');return;}
+  const d=state.drafts[selected];
+  if(!d.answer.trim()){submissionStatus('还没有可提交的答案，请先写下代码或思路。','error');$('answer-editor').focus();return;}
+  const rows=state.submissions.filter(s=>s.id===selected),previous=rows[rows.length-1];
+  if(previous&&previous.answer===d.answer&&previous.reflection===d.reflection){renderSubmissions();setTab('history');submissionStatus('这份答案已经提交，下面是已保存的记录。');return;}
+  const record={id:selected,at:new Date().toISOString(),...d};
+  state.submissions.push(record);
+  if(!persist()){state.submissions.pop();submissionStatus('提交失败：存储空间不足或浏览器禁止保存。请导出备份，答案仍在编辑器中。','error');return;}
+  renderSubmissions();setTab('history');submissionStatus('提交成功，已保存本次答案。复制给教练可获得批改；右侧可记录自评并安排复习。');
+  toast('答案已提交，已打开提交记录。');
+}
+async function copyAnswer(snapshot){
+  const savedAnswer=snapshot&&typeof snapshot.answer==='string';if(!savedAnswer)saveDraft();const q=byId.get(selected),d=savedAnswer?snapshot:state.drafts[selected];
   if(!d.answer.trim()){toast('请先写一些代码或思路。');return;}
   const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${state.hints[q.id]||0}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}\n\n如需同步网页反馈，请提供包含本题记录的 coach.py progress.json，或按网页自评量表说明评分。`;
   try{await navigator.clipboard.writeText(text);toast('已复制。粘贴到当前 Codex 聊天即可批改。');}catch(e){showDialog('复制给教练','<p>浏览器无法自动复制，请选中下方内容复制。</p><textarea id="copy-fallback" class="reflection" style="height:260px" readonly></textarea>');$('copy-fallback').value=text;$('copy-fallback').select();}
@@ -172,7 +185,18 @@ function showHintWithOrder(level){const previous=state.hints[selected]||0;if(lev
 $('start-answer').onclick=()=>{setTab('answer');$('answer-editor').focus();};
 $('answer-editor').addEventListener('input',()=>{updateLines();saveDraft();});$('reflection').addEventListener('input',saveDraft);
 $('answer-editor').addEventListener('scroll',()=>{$('line-numbers').scrollTop=$('answer-editor').scrollTop;});
-$('answer-editor').addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();const el=e.target,start=el.selectionStart,end=el.selectionEnd;el.setRangeText('    ',start,end,'end');updateLines();saveDraft();}});
+function editorKeydown(e){
+  if(e.isComposing)return;
+  if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();submit();return;}
+  if(e.target!==$('answer-editor')||e.altKey||e.metaKey||e.ctrlKey)return;
+  const el=e.target,change=window.CoachEditor.edit(el.value,el.selectionStart,el.selectionEnd,e.key,e.shiftKey,byId.get(selected).track!=='llm_qa');
+  if(!change)return;
+  e.preventDefault();el.setRangeText(change.text,change.from,change.to,'end');el.setSelectionRange(change.start,change.end);updateLines();saveDraft();
+}
+$('answer-editor').addEventListener('keydown',editorKeydown);
+$('reflection').addEventListener('keydown',editorKeydown);
+$('history-edit').onclick=()=>{setTab('answer');$('answer-editor').focus();};
+$('history-copy').onclick=()=>{const rows=state.submissions.filter(s=>s.id===selected);copyAnswer(rows[rows.length-1]);};
 $('submit-answer').onclick=submit;$('copy-answer').onclick=copyAnswer;$('complete-task').onclick=complete;
 $('timer-toggle').onclick=()=>{if(timerEnd){stopTimer();return;}if(remaining<=0)remaining=durations[byId.get(selected).track]*60000;timerLast=Date.now();timerEnd=timerLast+remaining;lastTickSave=timerLast;renderClock();toast('专注计时已开始，先试着独立想一想。');};
 $('search').addEventListener('input',renderBank);$('track-filter').onchange=renderBank;$('status-filter').onchange=renderBank;
