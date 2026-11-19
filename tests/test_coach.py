@@ -50,6 +50,16 @@ class QueueTests(unittest.TestCase):
             coach.assess(self.state, self.qs, task['id'], 4, 'ok', self.day, 'answer')
         self.assertEqual(self.state, original)
 
+    def test_web_extra_task_can_receive_coach_feedback_without_changing_daily_tasks(self):
+        daily = coach.plan(self.state, self.qs, self.day)
+        original = copy.deepcopy(daily)
+        extra = {'id': 'llm_code-1', 'track': 'llm_code', 'done': False, 'extra': True}
+        self.state['extraDays'] = {'2026-11-19': [extra]}
+        coach.assess(self.state, self.qs, extra['id'], 2, 'needs hints', self.day, 'chat')
+        self.assertTrue(extra['done'])
+        self.assertEqual(self.state['progress'][extra['id']]['due'], '2026-11-20')
+        self.assertEqual(daily, original)
+
     def test_not_due_selects_new_question(self):
         task = coach.plan(self.state, self.qs, self.day)[0]
         self.state['progress'][task['id']] = {'due': '2026-12-01', 'score': 4}

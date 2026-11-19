@@ -12,7 +12,7 @@
     d.setUTCDate(d.getUTCDate() + count);
     return dayKey(d);
   }
-  function emptyState() { return {version: 2, days: {}, progress: {}, history: [], drafts: {}, submissions: [], hints: {}, focus: {}, leetcode: {username:'',roundStart:'',accepted:{}}}; }
+  function emptyState() { return {version: 2, days: {}, extraDays: {}, progress: {}, history: [], drafts: {}, submissions: [], hints: {}, focus: {}, leetcode: {username:'',roundStart:'',accepted:{}}}; }
   function plan(state, catalog, day) {
     if (state.days[day]) return state.days[day];
     const tasks = [];
@@ -35,8 +35,25 @@
     const record = {date: day, score, stage, due: addDays(day, INTERVALS[stage]), feedback, evidence: '网页自评', source: 'self'};
     state.progress[id] = record;
     state.history.push({id, ...record});
-    for (const [d,tasks] of Object.entries(state.days)) if (d <= day) for (const t of tasks) if (t.id === id) t.done = true;
+    for (const pool of [state.days,state.extraDays || {}]) for (const [d,tasks] of Object.entries(pool)) if (d <= day) for (const t of tasks) if (t.id === id) t.done = true;
     return record;
+  }
+  function nextPractice(state, catalog, day, track, currentId) {
+    if (!TRACKS.includes(track)) throw Error('请选择有效的学习路线。');
+    const used = new Set([currentId, ...(state.days[day] || []).map(t=>t.id), ...(state.extraDays?.[day] || []).map(t=>t.id)]);
+    for (const [id,p] of Object.entries(state.progress)) if (p.date === day) used.add(id);
+    for (const s of state.submissions) {const at=new Date(s.at);if(!Number.isNaN(at.getTime()) && dayKey(at)===day)used.add(s.id);}
+    const candidates = catalog.filter(q=>q.track===track && !used.has(q.id));
+    const due = candidates.filter(q=>state.progress[q.id]?.due<=day).sort((a,b)=>state.progress[a.id].due.localeCompare(state.progress[b.id].due) || state.progress[a.id].score-state.progress[b.id].score);
+    const attempted = new Set(state.submissions.map(s=>s.id));
+    const fresh = candidates.filter(q=>!state.progress[q.id] && !attempted.has(q.id) && !state.leetcode?.accepted[q.id]);
+    const previous = candidates.slice().sort((a,b)=>(state.progress[a.id]?.date || '').localeCompare(state.progress[b.id]?.date || ''));
+    const q = (due.length ? due : fresh.length ? fresh : previous)[0];
+    if (!q) return null;
+    const task = {id:q.id,track,done:false,review:due.length>0,carried:false,extra:true,early:!due.length && !fresh.length};
+    state.extraDays ||= {};
+    (state.extraDays[day] ||= []).push(task);
+    return task;
   }
   function validDate(d) { return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d)) && new Date(d).toISOString().slice(0,10) === d; }
   function importState(input, catalog) {
@@ -51,6 +68,11 @@
       if (!validDate(d) || !Array.isArray(tasks)) throw Error('备份中的每日清单无效。');
       const seen = new Set();
       result.days[d] = tasks.filter(t => known.has(t.id) && !seen.has(t.id) && seen.add(t.id)).map(t => ({id:t.id, track:known.get(t.id).track, done:!!t.done, review:!!t.review, carried:!!t.carried}));
+    }
+    for (const [d,tasks] of Object.entries(input.extraDays || {})) {
+      if (!validDate(d) || !Array.isArray(tasks)) throw Error('备份中的加练清单无效。');
+      const seen = new Set((result.days[d] || []).map(t=>t.id));
+      result.extraDays[d] = tasks.filter(t=>known.has(t.id) && !seen.has(t.id) && seen.add(t.id)).map(t=>({id:t.id,track:known.get(t.id).track,done:!!t.done,review:!!t.review,carried:false,extra:true,early:!!t.early}));
     }
     result.history = input.history.filter(h => known.has(h.id)).map(h => ({id:h.id,...record(h)}));
     for (const [id,d] of Object.entries(input.drafts || {})) if (known.has(id)) result.drafts[id] = {answer:String(d.answer || '').slice(0,300000), reflection:String(d.reflection || '').slice(0,10000)};
@@ -76,9 +98,14 @@
     return result;
   }
   function merge(a,b) {
-    const out = {...a, days:{...a.days}, progress:{...a.progress}, drafts:{...a.drafts,...b.drafts}, hints:{...a.hints,...b.hints}, focus:{...a.focus}};
+    const out = {...a, days:{...a.days}, extraDays:{...a.extraDays}, progress:{...a.progress}, drafts:{...a.drafts,...b.drafts}, hints:{...a.hints,...b.hints}, focus:{...a.focus}};
     for (const [id,p] of Object.entries(b.progress)) if (!out.progress[id] || p.date >= out.progress[id].date) out.progress[id] = p;
     for (const [day,tasks] of Object.entries(b.days)) if (!out.days[day]) out.days[day] = tasks;
+    for (const [d,tasks] of Object.entries(b.extraDays || {})) {
+      const merged = new Map((out.extraDays[d] || []).map(t=>[t.id,{...t}]));
+      for (const t of tasks) merged.set(t.id,{...t,done:t.done || !!merged.get(t.id)?.done});
+      out.extraDays[d] = [...merged.values()];
+    }
     out.days = Object.fromEntries(Object.entries(out.days).map(([d,tasks]) => [d,tasks.map(t => ({...t,done:t.done || !!(out.progress[t.id] && out.progress[t.id].date >= d)}))]));
     for (const [d,n] of Object.entries(b.focus)) out.focus[d] = Math.max(n,out.focus[d] || 0);
     const unique = (xs,key) => [...new Map(xs.map(x => [key(x),x])).values()];
@@ -86,6 +113,6 @@
     out.submissions = unique([...a.submissions,...b.submissions],s=>`${s.id}:${s.at}`);
     return out;
   }
-  const api = {TRACKS,INTERVALS,dayKey,addDays,emptyState,plan,grade,importState,merge};
+  const api = {TRACKS,INTERVALS,dayKey,addDays,emptyState,plan,nextPractice,grade,importState,merge};
   if (typeof module !== 'undefined') module.exports = api; else root.CoachCore = api;
 })(typeof window === 'undefined' ? globalThis : window);

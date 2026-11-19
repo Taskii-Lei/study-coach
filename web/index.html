@@ -4,7 +4,7 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#7762e8"><meta name="description" content="Hot 100 与 LLM 的每日学习工作台：作答、分级提示、专注与间隔复习。">
 <title>循序 · 你的算法学习教练</title>
-<link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css?v=20261119-lc2">
+<link rel="icon" href="./icon.svg" type="image/svg+xml"><link rel="stylesheet" href="./style.css?v=20261119-extra1">
 </head>
 <body>
 <aside class="sidebar">
@@ -34,13 +34,13 @@
 <div class="overview-card"><div class="card-top"><span class="card-label">累计练习</span><span class="stat-icon amber-text">✧</span></div><div class="big-number"><span id="practiced">0</span><small> / 150 题</small></div><span class="card-foot" id="review-summary">完成后，会自动安排间隔复习</span></div>
 <div class="coach-banner"><span class="coach-spark">✦</span><div class="coach-note-label">教练的一句话</div><p id="coach-message">先把思路说清楚，<br>再让代码跑起来。</p><small>卡住是学习的一部分。</small></div>
 </section>
-<div class="section-line"><h2>今天的学习清单 <span>DAILY PRACTICE</span></h2><span class="pill neutral">60 分钟 · 量力而行</span></div>
+<div class="section-line"><h2>今天的学习清单 <span>DAILY PRACTICE</span></h2><span class="pill neutral">基础任务 60 分钟 · 可自由加练</span></div>
 <div class="learning-grid">
-<section class="task-panel panel"><div class="panel-heading"><h3>分三步，慢慢来</h3><span id="task-date"></span></div><div id="task-list"></div><div class="queue-note"><span>↺</span> 没做完的题会顺延，复习优先。<br>不需要为了打卡，匆忙看懂答案。</div></section>
+<section class="task-panel panel"><div class="panel-heading"><h3>分三步，慢慢来</h3><span id="task-date"></span></div><div id="task-list"></div><details id="extra-practice-section" class="extra-practice-section hidden" open><summary id="extra-practice-summary">今日加练</summary><div id="extra-task-list"></div></details><div class="queue-note"><span>↺</span> 没做完的题会顺延，复习优先。<br>不需要为了打卡，匆忙看懂答案。</div></section>
 <section class="workspace panel">
 <div class="workspace-heading"><div class="workspace-topic" id="workspace-topic"></div><div class="timer"><span id="timer-clock">30:00</span><button id="timer-toggle" class="icon-button" aria-label="开始专注计时">▷</button></div></div>
 <div class="question-title-row"><h2 id="question-title"></h2><span id="question-difficulty" class="pill"></span></div><div id="question-tags" class="question-tags"></div>
-<div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="problem" class="active">题目说明</button><button role="tab" aria-selected="false" data-tab="answer">我的作答</button><button role="tab" aria-selected="false" data-tab="history">提交记录 <span id="submission-count">0</span></button></div>
+<div class="extra-practice-controls"><label for="practice-track">有空多练一道</label><select id="practice-track" aria-label="加练路线"><option value="leetcode">Hot 100</option><option value="llm_code">LLM 手写</option><option value="llm_qa">LLM 面试</option></select><button id="next-question" class="button secondary" title="保留草稿，优先复习，再选新题">再来一题</button><p>自动保存当前草稿；加练不替换今天的基础任务。</p></div><div class="tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="problem" class="active">题目说明</button><button role="tab" aria-selected="false" data-tab="answer">我的作答</button><button role="tab" aria-selected="false" data-tab="history">提交记录 <span id="submission-count">0</span></button></div>
 <div id="leetcode-connection" class="leetcode-connection hidden"><span id="leetcode-status">力扣扩展未连接</span><button id="install-extension" class="button secondary">连接力扣</button><a id="official-problem" target="_blank" rel="noopener noreferrer">查看原题</a></div><div id="submission-status" class="submission-status hidden" role="status" aria-live="polite"></div>
 <div class="tab-content" id="problem-tab"><div id="question-description"></div><div id="question-examples"></div><div class="acceptance"><span>✓</span><div><b>完成标准</b><p id="acceptance-text"></p></div></div><button class="button primary full" id="start-answer">开始作答</button></div>
 <div class="tab-content hidden" id="answer-tab"><div class="editor-toolbar"><span id="editor-language">Python 3</span><span>自动保存草稿</span></div><p class="editor-shortcuts">Enter 自动缩进 · Tab / Shift+Tab 调整缩进 · ⌘ / Ctrl+Enter 提交</p><div class="editor-wrap"><pre id="line-numbers" aria-hidden="true">1</pre><textarea id="answer-editor" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-label="作答编辑器" placeholder="先写下你的思路，再开始编码…"></textarea></div><label class="field-label" for="reflection">思路与验证</label><textarea id="reflection" class="reflection" placeholder="时间 / 空间复杂度、测试结果，以及卡住的地方…"></textarea><div class="answer-actions"><button class="button secondary" id="copy-answer">复制给教练</button><button class="button primary" id="submit-answer">提交答案</button></div><p class="fine-print">作答保存在当前浏览器。Hot 100 通过扩展交给力扣官方判题；LLM 手写及口述可复制给教练批改。</p></div>
@@ -58,5 +58,5 @@
 </div>
 <dialog id="info-dialog"><button class="dialog-close icon-button" aria-label="关闭弹窗">×</button><div class="dialog-icon">✦</div><h2 id="dialog-title"></h2><div id="dialog-content"></div><button class="button primary full dialog-dismiss">明白了</button></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
-<script src="./data.js"></script><script src="./core.js?v=20261119-lc2"></script><script src="./editor.js"></script><script src="./leetcode-problems.js?v=20261119-lc2"></script><script src="./leetcode.js?v=20261119-lc2"></script><script src="./app.js?v=20261119-lc2"></script>
+<script src="./data.js"></script><script src="./core.js?v=20261119-extra1"></script><script src="./editor.js"></script><script src="./leetcode-problems.js?v=20261119-extra1"></script><script src="./leetcode.js?v=20261119-extra1"></script><script src="./app.js?v=20261119-extra1"></script>
 </body></html>

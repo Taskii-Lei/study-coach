@@ -58,7 +58,8 @@ def assess(state, curriculum, qid, score, feedback, day, evidence):
     ids = {q['id'] for q in curriculum}
     if qid not in ids:
         raise ValueError('未知题号：' + qid)
-    pending = [t for d, p in state['days'].items() if d <= day.isoformat()
+    pending = [t for pool in (state['days'], state.get('extraDays', {}))
+               for d, p in pool.items() if d <= day.isoformat()
                for t in p if t['id'] == qid and not t['done']]
     if not pending:
         raise ValueError('该题没有待完成的任务；请勿重复记录同一次提交。')
@@ -117,6 +118,9 @@ def main():
             print('今天尚未布置任务；先执行 daily。')
         else:
             print(render(tasks, curriculum))
+        extra = state.get('extraDays', {}).get(day.isoformat(), [])
+        if extra:
+            print('\n今日加练（可选）：\n' + render(extra, curriculum))
     elif args.command == 'grade':
         try:
             assess(state, curriculum, args.id, args.score, args.feedback, day, args.evidence)

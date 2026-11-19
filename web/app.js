@@ -10,6 +10,7 @@ const durations = {leetcode:30,llm_code:20,llm_qa:10};
 const trackColors = {leetcode:'purple',llm_code:'teal',llm_qa:'amber'};
 let state=C.emptyState(), day=C.dayKey(), selected, tab='problem', currentView='today', toastTimeout, timerEnd=0, remaining=30*60000, timerLast=0, lastTickSave=0, saveFailed=false;
 try { const raw=localStorage.getItem(KEY); if(raw) state=C.importState(JSON.parse(raw),catalog); } catch(e) { saveFailed=true; setTimeout(()=>showDialog('存档需要检查','<p>浏览器中的存档无法读取，暂未覆盖原记录。请先使用浏览器备份原数据，再清理或导入有效备份。</p>'),300); }
+state.extraDays ||= {};
 state.leetcode ||= {username:'',roundStart:day,accepted:{}};if(!state.leetcode.roundStart)state.leetcode.roundStart=day;
 let tasks=C.plan(state,catalog,day);
 selected=tasks.find(t=>!t.done)?.id || tasks[0]?.id || catalog[0].id;
@@ -49,10 +50,26 @@ function renderStats(){
   $('task-date').textContent=day.slice(5).replace('-',' / ');
 }
 function renderTasks(){
+  renderExtraTasks();
   $('task-list').innerHTML=tasks.length?tasks.map(t=>{const q=byId.get(t.id);return `<button class="task-card ${t.id===selected?'selected':''}" data-question="${q.id}"><div class="task-card-top"><i class="dot ${trackColors[q.track]}"></i> ${trackNames[q.track]}</div><h4>${q.track==='leetcode'?q.id.slice(3)+'. ':''}${escape(q.title)}</h4><p>${escape(q.topic || (q.track==='llm_code'?'实现 · 验证 · 解释':'原理 · 取舍 · 追问'))}</p><div class="task-card-bottom"><span class="pill ${t.done?'green':t.review?'purple-pill':'neutral'}">${t.done?'已记录':t.carried?'继续完成':t.review?'到期复习':'待开始'}</span><span>${durations[q.track]} 分钟</span></div></button>`}).join(''):empty('今天没有到期任务，可以去题库自由练习。');
+}
+function renderExtraTasks(){
+  const extra=state.extraDays[day]||[];
+  $('extra-practice-section').classList.toggle('hidden',!extra.length);
+  $('extra-practice-summary').textContent=`今日加练 · ${extra.length} 题 · 已记录 ${extra.filter(t=>t.done).length} 题`;
+  $('extra-task-list').innerHTML=extra.map(t=>{const q=byId.get(t.id);return `<button class="task-card ${t.id===selected?'selected':''}" data-question="${q.id}"><div class="task-card-top"><i class="dot ${trackColors[q.track]}"></i> ${trackNames[q.track]}</div><h4>${q.track==='leetcode'?q.id.slice(3)+'. ':''}${escape(q.title)}</h4><div class="task-card-bottom"><span class="pill ${t.done?'green':'purple-pill'}">${t.done?'已记录':t.review?'加练 · 到期复习':t.early?'加练 · 提前复习':'加练 · 新题'}</span><span>${durations[q.track]} 分钟</span></div></button>`;}).join('');
+}
+function nextQuestion(){
+  if(!saveDraft()){toast('草稿尚未保存，请先导出备份后重试。');return;}
+  const task=C.nextPractice(state,catalog,day,$('practice-track').value,selected);
+  if(!task){toast('这条路线的题目今天都已安排过了，可以换条路线或到题库自由重练。');return;}
+  if(!persist()){state.extraDays[day].pop();toast('加练任务未能保存，当前题目已保留。');return;}
+  tab='problem';switchQuestion(task.id);
+  toast(task.review?'已加入一道到期复习题。':task.early?'该路线的新题已练过，已加入一道提前复习题。':'已加入一道新题，上一题的草稿已保存。');
 }
 function renderQuestion(){
   const q=byId.get(selected),p=state.progress[q.id],d=draft(q);
+  $('practice-track').value=q.track;
   $('workspace-topic').innerHTML=`<i class="dot ${trackColors[q.track]}"></i> <span>${trackNames[q.track]}</span>`;
   $('question-title').textContent=(q.track==='leetcode'?q.id.slice(3)+'. ':'')+q.title;
   $('question-difficulty').textContent=qstatus(q);$('question-difficulty').className='pill '+(p?'green':'purple-pill');
@@ -151,7 +168,7 @@ async function importData(file){
     if(incoming.leetcode?.roundStart)state.leetcode.roundStart=incoming.leetcode.roundStart;
     for(const [id,r] of Object.entries(incoming.leetcode?.accepted||{}))if(!state.leetcode.accepted[id]||r.submitTime>state.leetcode.accepted[id].submitTime)state.leetcode.accepted[id]=r;
     $('leetcode-username').value=state.leetcode.username;$('leetcode-round-start').value=state.leetcode.roundStart;
-    for(const [d,tasks] of Object.entries(state.days))for(const t of tasks)if(state.progress[t.id]?.date>=d)t.done=true;
+    for(const pool of [state.days,state.extraDays])for(const [d,tasks] of Object.entries(pool))for(const t of tasks)if(state.progress[t.id]?.date>=d)t.done=true;
     saveFailed=false;persist();tasks=C.plan(state,CURRICULUM,day);renderStatsAndQuestion();showView(currentView);toast('记录已合并；本页已刷新。');
   }catch(e){toast('导入失败：'+e.message);}finally{$('import-file').value='';}
 }
@@ -201,7 +218,7 @@ function installExtension(){
   showDialog('连接力扣官方判题','<p>需要在 Chrome 或 Edge 中打开本网页，并安装一次扩展。</p><ol><li><a href="https://github.com/Taskii-Lei/study-coach/archive/refs/heads/main.zip" target="_blank" rel="noopener noreferrer">下载项目 ZIP</a>并解压。</li><li>打开 <code>chrome://extensions</code>（Edge 使用 <code>edge://extensions</code>），开启「开发者模式」。</li><li>选择「加载已解压的扩展程序」，选中解压后的 <code>extension</code> 文件夹。</li><li>在同一浏览器登录 <a href="https://leetcode.cn/" target="_blank" rel="noopener noreferrer">力扣中国站</a>，然后刷新本网页。</li></ol><p>连接后，点击提交会使用你的力扣账号提交代码，官方结果自动回传。登录会话只在你的浏览器内使用，不上传 GitHub。</p>');
 }
 function markOfficialCompletion(id,at){
-  for(const [d,list] of Object.entries(state.days))if(d<=at)for(const t of list)if(t.id===id)t.done=true;
+  for(const pool of [state.days,state.extraDays])for(const [d,list] of Object.entries(pool))if(d<=at)for(const t of list)if(t.id===id)t.done=true;
 }
 async function submitOfficial(){
   if(activeOfficial)return;
@@ -265,6 +282,7 @@ document.addEventListener('click',e=>{
  const t=e.target.closest('[data-tab]');if(t)setTab(t.dataset.tab);
 });
 function showHintWithOrder(level){const previous=state.hints[selected]||0;if(level>previous+1){toast('先看上一级提示，给自己留一点思考空间。');showHintWithOrder(previous+1);return;}showHint(level);}
+$('next-question').onclick=nextQuestion;
 $('start-answer').onclick=()=>{setTab('answer');$('answer-editor').focus();};
 $('answer-editor').addEventListener('input',()=>{updateLines();saveDraft();});$('reflection').addEventListener('input',saveDraft);
 $('answer-editor').addEventListener('scroll',()=>{$('line-numbers').scrollTop=$('answer-editor').scrollTop;});
@@ -284,7 +302,7 @@ $('submit-answer').onclick=submit;$('copy-answer').onclick=copyAnswer;$('complet
 $('timer-toggle').onclick=()=>{if(timerEnd){stopTimer();return;}if(remaining<=0)remaining=durations[byId.get(selected).track]*60000;timerLast=Date.now();timerEnd=timerLast+remaining;lastTickSave=timerLast;renderClock();toast('专注计时已开始，先试着独立想一想。');};
 $('search').addEventListener('input',renderBank);$('track-filter').onchange=renderBank;$('status-filter').onchange=renderBank;
 $('export-progress').onclick=exportData;$('export-settings').onclick=exportData;$('import-button').onclick=()=>$('import-file').click();$('import-file').onchange=e=>importData(e.target.files[0]);
-$('help-button').onclick=()=>showDialog('欢迎来到循序','<p>这里是你的算法与 LLM 学习工作台。</p><ul><li>每天三项任务：Hot 100、LLM 手写、面试复习。</li><li>作答会自动保存；卡住时逐级打开提示。</li><li>记录自评后，会安排间隔复习。</li><li>深度批改：点击「复制给教练」，粘贴到 Codex 聊天。</li></ul><p>数据仅保存在当前浏览器，请定期导出备份。09:00 / 21:00 提醒仍由 Codex 自动化提供，网页本身不会在关闭后推送通知。</p>');
+$('help-button').onclick=()=>showDialog('欢迎来到循序','<p>这里是你的算法与 LLM 学习工作台。</p><ul><li>每天三项任务：Hot 100、LLM 手写、面试复习。</li><li>有空时选择路线，点击「再来一题」自由加练。</li><li>作答会自动保存；卡住时逐级打开提示。</li><li>记录自评后，会安排间隔复习。</li><li>深度批改：点击「复制给教练」，粘贴到 Codex 聊天。</li></ul><p>数据仅保存在当前浏览器，请定期导出备份。09:00 / 21:00 提醒仍由 Codex 自动化提供，网页本身不会在关闭后推送通知。</p>');
 $('schedule-button').onclick=()=>showDialog('每天 60 分钟，按时开始','<p>北京时间 09:00 出题，21:00 检查。提醒由 Codex 自动化提供；修改时间可在当前聊天告诉教练。</p><ul><li>Hot 100：30 分钟</li><li>LLM 手写：20 分钟</li><li>LLM 面试：10 分钟</li></ul><p>未完成任务顺延；到期复习优先。网页与 Codex 的进度可通过设置中的 JSON 导入、导出交换。</p>');
 $('info-dialog').querySelectorAll('.dialog-close,.dialog-dismiss').forEach(b=>b.onclick=()=>$('info-dialog').close());
 $('info-dialog').addEventListener('click',e=>{if(e.target===$('info-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
