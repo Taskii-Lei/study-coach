@@ -14,6 +14,7 @@ async function resolveOfficialPage(){
   const timer=setTimeout(()=>{chrome.tabs.onUpdated.removeListener(listener);reject(new SiteError('site_blocked','力扣页面未能加载，请打开力扣官网确认登录或完成页面验证。'));},30000);
   function listener(id,change){if(id===tab.id&&change.status==='complete'){clearTimeout(timer);chrome.tabs.onUpdated.removeListener(listener);resolve();}}
   chrome.tabs.onUpdated.addListener(listener);
+  chrome.tabs.get(tab.id).then(current=>{if(current.status==='complete')listener(tab.id,{status:'complete'});}).catch(error=>{clearTimeout(timer);chrome.tabs.onUpdated.removeListener(listener);reject(error);});
  });
  return officialTab;
 }
