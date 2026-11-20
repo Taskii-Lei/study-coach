@@ -25,10 +25,8 @@ function showDialog(title,content){$('dialog-title').textContent=title;$('dialog
 function empty(message){return `<div class="empty"><span>✧</span>${escape(message)}</div>`;}
 function hasPracticed(id){return !!state.progress[id]||!!state.leetcode.accepted[id]||state.submissions.some(s=>s.id===id);}
 function qstatus(q){if(state.leetcode.accepted[q.id]||state.submissions.some(s=>s.id===q.id&&s.result?.status==='accepted'))return '力扣已通过';const p=state.progress[q.id];return !p?'尚未练习':p.due<=day?'待复习':p.source==='self'?'已自评':'已反馈';}
-function draft(q){
-  if(!state.drafts[q.id]) state.drafts[q.id]={answer:starter(q),reflection:''};
-  return state.drafts[q.id];
-}
+function draft(q,forceReview=false){return C.getDraft(state,q.id,day,starter(q),forceReview);}
+function currentHintLevel(q=byId.get(selected)){const d=draft(q);return d.startedOn?d.hintLevel:state.hints[q.id]||0;}
 function starter(q){if(q.track==='leetcode')return LC.starter(q.id)||'# 实现后提交到力扣官方判题\n';
   if(q.id==='lc-1')return 'class Solution:\n    def twoSum(self, nums: list[int], target: int) -> list[int]:\n        # 先写下你的思路\n        pass\n';
   if(q.id==='code-01')return 'import math\n\ndef stable_softmax(logits: list[float]) -> list[float]:\n    # 实现数值稳定的 softmax\n    pass\n';
@@ -86,6 +84,7 @@ function renderQuestion(){
   $('question-examples').innerHTML=examples[q.id]?`<div class="example"><b>${escape(examples[q.id][0])}</b><pre>${escape(examples[q.id][1])}</pre></div>`:'';
   $('acceptance-text').textContent=q.track==='llm_qa'?'用自己的话解释原理，交代假设和适用边界，并准备回答一个追问。':'提交代码、思路与复杂度分析；设计至少两个有区分力的测试，并说明是否实际运行。';
   $('answer-editor').value=d.answer;$('reflection').value=d.reflection;
+  $('review-draft-note').classList.toggle('hidden',!d.startedOn);
   $('editor-language').textContent=q.track==='llm_qa'?'Markdown · 口述笔记':'Python 3';
   $('mentor-intro').textContent=q.track==='llm_qa'?'先用两三句话讲清核心机制，再补推导和适用边界。不必一开始就背标准答案。':'先试着用自己的话复述问题。你现在有什么思路？';
   $('grade-score').value=p?.date===day?String(p.score):'';
@@ -101,27 +100,29 @@ function renderSubmissions(){
   $('history-actions').classList.toggle('hidden',!rows.length);
   submissionStatus();
   $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>${escape(s.result?officialLabel(s.result):'已保存 · 尚未判题')}</h4>${s.result?officialResultHTML(s.result):''}<small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
+  const active=draft(byId.get(selected)),old=state.drafts[selected];
+  if(active.startedOn && old?.answer && !rows.some(s=>s.answer===old.answer))$('submission-history').innerHTML+=`<details class="history-item"><summary>上次练习草稿（点击查看）</summary><pre>${escape(old.answer)}</pre><p>${escape(old.reflection)}</p></details>`;
   const h=state.history.filter(h=>h.id===selected).slice().reverse();
   if(h.length)$('submission-history').innerHTML+=h.map(r=>`<article class="history-item"><h4>${r.source==='self'?'自评记录':'教练反馈'} · ${r.score} / 4</h4><small>${r.date} · 下次复习 ${r.due}</small><p>${escape(r.feedback)}</p></article>`).join('');
 }
 function empty(message){return `<div class="empty"><span>✧</span>${escape(message)}</div>`;}
 function formatTime(at){const d=new Date(at);return Number.isNaN(d.getTime())?at:new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(d);}
 function setTab(next){tab=next;document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===next);b.setAttribute('aria-selected',String(b.dataset.tab===next));});['problem','answer','history'].forEach(t=>$(t+'-tab').classList.toggle('hidden',t!==next));}
-function switchQuestion(id){if(!byId.has(id))return;stopTimer();selected=id;remaining=durations[byId.get(id).track]*60000;renderClock();renderQuestion();showView('today');}
+function switchQuestion(id,review=false){if(!byId.has(id))return;stopTimer();selected=id;const d=draft(byId.get(id),review);if(d.startedOn)tab='problem';remaining=durations[byId.get(id).track]*60000;renderClock();renderQuestion();showView('today');persist();}
 function showView(view){if(!titles[view])view='today';const hero={today:['把今天的一小步，走扎实。','一道算法，一段手写，一次理解。今天也和教练一起进步。'],bank:['从一个问题，练到一种能力。','150 道题，三条学习路线。按知识点或进度，找到下一道。'],review:['隔一段时间，再想明白一次。','复习不是重看答案，而是重新独立解决问题。'],progress:['你走过的每一步，都有迹可循。','记录理解，也记录卡住的地方。把进步留给时间。'],settings:['让计划，适合你的生活。','按自己的节奏学习，也为认真思考留下空间。']};$('heading').textContent=hero[view][0];$('subheading').textContent=hero[view][1];currentView=view;document.querySelectorAll('.view').forEach(el=>el.classList.toggle('hidden',el.id!==view+'-view'));document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('view-title').textContent=titles[view];if(view==='bank')renderBank();if(view==='review')renderReview();if(view==='progress')renderProgress();history.replaceState(null,'','#'+view);}
-function row(q,meta,action='练习'){return `<div class="bank-row"><i class="dot ${trackColors[q.track]}"></i><div><h3>${q.track==='leetcode'?q.id.slice(3)+'. ':''}${escape(q.title)}</h3><p>${trackNames[q.track]} · ${escape(q.topic || 'LLM 核心基础')}</p></div><span>${escape(meta)}</span><button class="button secondary" data-question="${q.id}">${action}</button></div>`;}
+function row(q,meta,action='练习',review=false){return `<div class="bank-row"><i class="dot ${trackColors[q.track]}"></i><div><h3>${q.track==='leetcode'?q.id.slice(3)+'. ':''}${escape(q.title)}</h3><p>${trackNames[q.track]} · ${escape(q.topic || 'LLM 核心基础')}</p></div><span>${escape(meta)}</span><button class="button secondary" data-question="${q.id}" ${review?'data-review="true"':''}>${action}</button></div>`;}
 function renderBank(){
   const search=$('search').value.trim().toLowerCase(),track=$('track-filter').value,status=$('status-filter').value;
   const qs=CURRICULUM.filter(q=>(track==='all'||q.track===track)&&`${q.id} ${q.title} ${q.topic||''}`.toLowerCase().includes(search)).filter(q=>{const p=state.progress[q.id];return status==='all'||status==='new'&&!hasPracticed(q.id)||status==='due'&&p?.due<=day||status==='practiced'&&hasPracticed(q.id);});
   $('bank-results').innerHTML=`<div class="bank-result-count">找到 ${qs.length} 道题 · 自由练习不会增加今日必做任务</div>`+(qs.length?qs.map(q=>row(q,state.progress[q.id]?`${state.progress[q.id].score}/4 · ${state.progress[q.id].due} 复习`:'尚未练习')).join(''):empty('没有匹配的题目，换个关键词试试。'));
 }
-function renderReview(){const qs=CURRICULUM.filter(q=>state.progress[q.id]).sort((a,b)=>state.progress[a.id].due.localeCompare(state.progress[b.id].due));$('review-list').innerHTML=qs.length?qs.map(q=>row(q,`${state.progress[q.id].due} · ${state.progress[q.id].due<=day?'已到期':'待复习'}`,'再练一次')).join(''):empty('还没有复习任务。完成一次作答并记录理解程度，就会生成复习计划。');}
+function renderReview(){const qs=CURRICULUM.filter(q=>state.progress[q.id]).sort((a,b)=>state.progress[a.id].due.localeCompare(state.progress[b.id].due));$('review-list').innerHTML=qs.length?qs.map(q=>row(q,`${state.progress[q.id].due} · ${state.progress[q.id].due<=day?'已到期':'待复习'}`,'再练一次',true)).join(''):empty('还没有复习任务。完成一次作答并记录理解程度，就会生成复习计划。');}
 function renderProgress(){
   $('track-progress').innerHTML=Object.keys(trackNames).map(t=>{const total=CURRICULUM.filter(q=>q.track===t).length,count=CURRICULUM.filter(q=>q.track===t&&hasPracticed(q.id)).length;return `<div><h3>${trackNames[t]}</h3><strong>${count}</strong><small> / ${total} 题</small><p class="fine-print">已练习 ${Math.round(count/total*100)}%</p></div>`;}).join('');
   const h=state.history.slice().reverse();$('activity-list').innerHTML=h.length?h.map(r=>`<article class="history-item"><h4>${escape(byId.get(r.id)?.title)} · ${r.score} / 4</h4><small>${r.date} · ${r.source==='self'?'自评':'教练反馈'} · 下次复习 ${r.due}</small><p>${escape(r.feedback || '已记录本次理解程度。')}</p></article>`).join(''):empty('你的学习轨迹会出现在这里。今天，就从第一道题开始。');
 }
 function updateLines(){$('line-numbers').textContent=Array.from({length:$('answer-editor').value.split('\n').length},(_,i)=>i+1).join('\n');}
-function saveDraft(){state.drafts[selected]={answer:$('answer-editor').value,reflection:$('reflection').value};const saved=persist();submissionStatus();return saved;}
+function saveDraft(){Object.assign(draft(byId.get(selected)),{answer:$('answer-editor').value,reflection:$('reflection').value});const saved=persist();submissionStatus();return saved;}
 const topicHints={
   哈希:['先想想：遍历时，哪些信息需要快速查到？','用一个可哈希的表示记录已经见过的信息，避免反复扫描。','检查键冲突、重复值和查询/插入顺序；解释额外空间。'],
   双指针:['能否利用位置或排序后的单调性，减少重复比较？','明确左右指针移动的条件，并用不变量说明为什么没有漏解。','用重复值、空区间、最短输入和极端数值检查边界。'],
@@ -144,7 +145,7 @@ const specificHints={
  'qa-01':['假设各维独立、均值为零、方差为一，先看单个乘积项的方差。','点积是 d_k 个乘积项的和。求出方差后，再看除以 sqrt(d_k) 会怎样。','解释分数尺度增大时 softmax 为什么可能更尖锐；不要笼统地说所有梯度必然都消失。']
 };
 function hints(q){return specificHints[q.id] || topicHints[q.topic] || (q.track==='llm_code'?['先写清输入、输出和每个张量的 shape，用最小样例手算。','先完成不带优化的正确版本，再逐项加入题目要求；避免一次实现所有分支。','对照题目约定检查数值稳定性、mask、极端输入和参考输出；说明实际运行了哪些验证。']:q.track==='llm_qa'?['先解释这个机制解决什么问题，再给出核心流程。','把回答拆成定义、假设、推导或例子、代价与取舍。','检查是否混淆训练与推理、理论结论与实现变体；为每个核心结论补一个理由。']:['先用最直接的方法解题，找出重复计算或可以复用的信息。','定义需要维护的状态和每一步的不变量，用一个小例子走完整个过程。','检查最小输入、重复元素和极端值，解释时间与额外空间复杂度。']);}
-function showHint(level){const q=byId.get(selected);state.hints[q.id]=Math.max(state.hints[q.id]||0,level);persist();$('hint-output').textContent=hints(q)[level-1];$('hint-output').classList.remove('hidden');}
+function showHint(level){const q=byId.get(selected),d=draft(q);if(d.startedOn)d.hintLevel=Math.max(d.hintLevel||0,level);else state.hints[q.id]=Math.max(state.hints[q.id]||0,level);persist();$('hint-output').textContent=hints(q)[level-1];$('hint-output').classList.remove('hidden');}
 function showDialog(title,html){$('dialog-title').textContent=title;$('dialog-content').innerHTML=html;$('info-dialog').showModal();}
 function renderClock(){const s=Math.ceil(remaining/1000);$('timer-clock').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');$('timer-toggle').textContent=timerEnd?'Ⅱ':'▷';$('timer-toggle').setAttribute('aria-label',timerEnd?'暂停专注计时':'开始专注计时');}
 function tick(){if(!timerEnd)return;const now=Date.now(),elapsed=Math.max(0,Math.min(now-timerLast,remaining));state.focus[day]=(state.focus[day]||0)+elapsed;remaining=Math.max(0,timerEnd-now);timerLast=now;if(now-lastTickSave>15000){persist();lastTickSave=now;}if(!remaining){timerEnd=0;persist();toast('这一段专注结束了，休息一下，再记录你的收获。');}renderClock();}
@@ -162,6 +163,7 @@ async function importData(file){
     const seen=new Set(state.history.map(h=>`${h.id}|${h.date}|${h.score}|${h.feedback}`));
     for(const h of incoming.history){const k=`${h.id}|${h.date}|${h.score}|${h.feedback}`;if(!seen.has(k)){state.history.push(h);seen.add(k);}}
     const submitted=new Set(state.submissions.map(s=>s.id+'|'+s.at));for(const s of incoming.submissions)if(!submitted.has(s.id+'|'+s.at)){state.submissions.push(s);submitted.add(s.id+'|'+s.at);}
+    Object.assign(state.reviewDrafts,incoming.reviewDrafts);
     for(const [id,n] of Object.entries(incoming.hints))state.hints[id]=Math.max(state.hints[id]||0,n);
     for(const [d,n] of Object.entries(incoming.focus))state.focus[d]=Math.max(state.focus[d]||0,n);
     if(incoming.leetcode?.username)state.leetcode.username=incoming.leetcode.username;
@@ -174,18 +176,18 @@ async function importData(file){
 }
 function renderStatsAndQuestion(){renderStats();renderQuestion();}
 function submissionStatus(message,kind='success'){
-  const el=$('submission-status'),rows=state.submissions.filter(s=>s.id===selected),latest=rows[rows.length-1],d=state.drafts[selected];
+  const el=$('submission-status'),d=draft(byId.get(selected)),rows=state.submissions.filter(s=>s.id===selected && (!d.startedOn || s.startedOn===d.startedOn)),latest=rows[rows.length-1];
   if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':latest.result?officialSummary(latest.result):`最近一次提交已保存（${formatTime(latest.at)}），尚未判题。`;kind=changed?'pending':latest.result?.status==='accepted'?'success':'pending';}
   el.textContent=message||'';el.className='submission-status '+(message?kind:'hidden');
 }
 function submit(){
   if(byId.get(selected).track==='leetcode'){submitOfficial();return;}
   if(!saveDraft()){submissionStatus('提交失败：浏览器未能写入存档。答案仍在编辑器中，请导出备份后重试。','error');return;}
-  const d=state.drafts[selected];
+  const d=draft(byId.get(selected));
   if(!d.answer.trim()){submissionStatus('还没有可提交的答案，请先写下代码或思路。','error');$('answer-editor').focus();return;}
   const rows=state.submissions.filter(s=>s.id===selected),previous=rows[rows.length-1];
-  if(previous&&previous.answer===d.answer&&previous.reflection===d.reflection){renderSubmissions();setTab('history');submissionStatus('这份答案已经提交，下面是已保存的记录。');return;}
-  const record={id:selected,at:new Date().toISOString(),...d};
+  if(previous&&previous.startedOn===d.startedOn&&previous.answer===d.answer&&previous.reflection===d.reflection){renderSubmissions();setTab('history');submissionStatus('这份答案已经提交，下面是已保存的记录。');return;}
+  const record={id:selected,at:new Date().toISOString(),...d,hintLevel:currentHintLevel()};
   state.submissions.push(record);
   if(!persist()){state.submissions.pop();submissionStatus('提交失败：存储空间不足或浏览器禁止保存。请导出备份，答案仍在编辑器中。','error');return;}
   renderSubmissions();setTab('history');submissionStatus('提交成功，已保存本次答案。复制给教练可获得批改；右侧可记录自评并安排复习。');
@@ -224,8 +226,8 @@ async function submitOfficial(){
   if(activeOfficial)return;
   if(!saveDraft()){submissionStatus('存档未写入，请先导出备份。','error');return;}
   if(!LC.connected){submissionStatus('请先连接浏览器扩展，代码尚未提交到力扣。','pending');installExtension();return;}
-  const d=state.drafts[selected];if(!d.answer.trim()){submissionStatus('请先填写代码。','error');return;}
-  const record={id:selected,at:new Date().toISOString(),...d};
+  const d=draft(byId.get(selected));if(!d.answer.trim()){submissionStatus('请先填写代码。','error');return;}
+  const record={id:selected,at:new Date().toISOString(),...d,hintLevel:currentHintLevel()};
   state.submissions.push(record);
   if(!persist()){state.submissions.pop();submissionStatus('提交前保存失败，代码尚未发往力扣。','error');return;}
   renderSubmissions();setTab('history');
@@ -262,26 +264,26 @@ async function syncLeetCode(){
   }catch(error){$('leetcode-sync-status').textContent=error.message||'同步失败，已保留上次记录。';}finally{button.disabled=false;}
 }
 async function copyAnswer(snapshot){
-  const savedAnswer=snapshot&&typeof snapshot.answer==='string';if(!savedAnswer)saveDraft();const q=byId.get(selected),d=savedAnswer?snapshot:state.drafts[selected];
+  const savedAnswer=snapshot&&typeof snapshot.answer==='string';if(!savedAnswer)saveDraft();const q=byId.get(selected),d=savedAnswer?snapshot:draft(byId.get(selected));
   if(!d.answer.trim()){toast('请先写一些代码或思路。');return;}
   const official=snapshot?.result;
   const officialFeedback=official?'\n\n力扣反馈：'+officialLabel(official)+'\n失败用例：'+(official.input||'—')+'\n预期：'+(official.expected||'—')+'\n实际：'+(official.actual||'—')+'\n错误：'+(official.error||'—'):'';
-  const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${state.hints[q.id]||0}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}\n\n如需同步网页反馈，请提供包含本题记录的 coach.py progress.json，或按网页自评量表说明评分。${officialFeedback}`;
+  const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${savedAnswer?(snapshot.hintLevel??state.hints[q.id]??0):currentHintLevel(q)}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}\n\n如需同步网页反馈，请提供包含本题记录的 coach.py progress.json，或按网页自评量表说明评分。${officialFeedback}`;
   try{await navigator.clipboard.writeText(text);toast('已复制。粘贴到当前 Codex 聊天即可批改。');}catch(e){showDialog('复制给教练','<p>浏览器无法自动复制，请选中下方内容复制。</p><textarea id="copy-fallback" class="reflection" style="height:260px" readonly></textarea>');$('copy-fallback').value=text;$('copy-fallback').select();}
 }
 function complete(){
-  saveDraft();if(!state.drafts[selected]?.answer.trim()){toast('请先在「我的作答」中完成本次尝试。');setTab('answer');return;}
+  saveDraft();if(!draft(byId.get(selected)).answer.trim()){toast('请先在「我的作答」中完成本次尝试。');setTab('answer');return;}
   const value=$('grade-score').value;if(value===''){toast('先选择本次理解程度；它会决定复习间隔。');return;}
-  try{const feedback=state.drafts[selected].reflection || '网页自评；未由 AI 批改。';const record=C.grade(state,selected,Number(value),day,feedback);persist();renderStatsAndQuestion();toast(`已记录自评，下次复习：${record.due}`);}catch(e){toast(e.message);}
+  try{const feedback=draft(byId.get(selected)).reflection || '网页自评；未由 AI 批改。';const record=C.grade(state,selected,Number(value),day,feedback);persist();renderStatsAndQuestion();toast(`已记录自评，下次复习：${record.due}`);}catch(e){toast(e.message);}
 }
 function rollover(){const next=C.dayKey();if(next===day)return;stopTimer();day=next;tasks=C.plan(state,CURRICULUM,day);persist();renderStatsAndQuestion();showView(currentView);toast('新的一天开始了，学习清单已更新。');}
 document.addEventListener('click',e=>{
  const view=e.target.closest('[data-view]');if(view){showView(view.dataset.view);return;}
- const question=e.target.closest('[data-question]');if(question){switchQuestion(question.dataset.question);return;}
+ const question=e.target.closest('[data-question]');if(question){switchQuestion(question.dataset.question,question.dataset.review==='true');return;}
  const hint=e.target.closest('[data-hint]');if(hint){showHintWithOrder(Number(hint.dataset.hint));return;}
  const t=e.target.closest('[data-tab]');if(t)setTab(t.dataset.tab);
 });
-function showHintWithOrder(level){const previous=state.hints[selected]||0;if(level>previous+1){toast('先看上一级提示，给自己留一点思考空间。');showHintWithOrder(previous+1);return;}showHint(level);}
+function showHintWithOrder(level){const previous=currentHintLevel();if(level>previous+1){toast('先看上一级提示，给自己留一点思考空间。');showHintWithOrder(previous+1);return;}showHint(level);}
 $('next-question').onclick=nextQuestion;
 $('start-answer').onclick=()=>{setTab('answer');$('answer-editor').focus();};
 $('answer-editor').addEventListener('input',()=>{updateLines();saveDraft();});$('reflection').addEventListener('input',saveDraft);

@@ -12,7 +12,7 @@
     d.setUTCDate(d.getUTCDate() + count);
     return dayKey(d);
   }
-  function emptyState() { return {version: 2, days: {}, extraDays: {}, progress: {}, history: [], drafts: {}, submissions: [], hints: {}, focus: {}, leetcode: {username:'',roundStart:'',accepted:{}}}; }
+  function emptyState() { return {version: 2, days: {}, extraDays: {}, progress: {}, history: [], drafts: {}, reviewDrafts: {}, submissions: [], hints: {}, focus: {}, leetcode: {username:'',roundStart:'',accepted:{}}}; }
   function plan(state, catalog, day) {
     if (state.days[day]) return state.days[day];
     const tasks = [];
@@ -55,6 +55,27 @@
     (state.extraDays[day] ||= []).push(task);
     return task;
   }
+  function getDraft(state, id, day, template, forceReview = false) {
+    state.reviewDrafts ||= {};
+    const pools = [state.days, state.extraDays || {}];
+    const task = pools.flatMap(pool=>pool[day] || []).find(t=>t.id===id);
+    const todayKey = id+'@'+day;
+    let key = task?.reviewKey;
+    if (!key && (task?.review || task?.early)) {
+      const pending = pools.flatMap(pool=>Object.entries(pool).filter(([d])=>d<=day).flatMap(([d,list])=>list.filter(t=>t.id===id && !t.done && (t.review || t.early)).map(t=>({day:d,task:t})))).sort((a,b)=>a.day.localeCompare(b.day));
+      key = pending.find(p=>p.task.reviewKey)?.task.reviewKey || id+'@'+(pending[0]?.day || day);
+      for (const p of pending) p.task.reviewKey=key;
+      task.reviewKey=key;
+    }
+    if (!key && state.reviewDrafts[todayKey]) key=todayKey;
+    if (!key && (forceReview || (!task && state.progress[id]?.date<day))) key=todayKey;
+    if (key) {
+      if (!state.reviewDrafts[key]) state.reviewDrafts[key]={id,startedOn:key.slice(id.length+1),answer:template,reflection:'',hintLevel:0};
+      return state.reviewDrafts[key];
+    }
+    if (!state.drafts[id]) state.drafts[id]={answer:template,reflection:''};
+    return state.drafts[id];
+  }
   function validDate(d) { return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && !Number.isNaN(Date.parse(d)) && new Date(d).toISOString().slice(0,10) === d; }
   function importState(input, catalog) {
     if (!input || ![1,2].includes(input.version) || !input.days || !input.progress || !Array.isArray(input.history)) throw Error('这不是有效的学习备份；需要 version、days、progress、history。');
@@ -67,17 +88,20 @@
     for (const [d,tasks] of Object.entries(input.days)) {
       if (!validDate(d) || !Array.isArray(tasks)) throw Error('备份中的每日清单无效。');
       const seen = new Set();
-      result.days[d] = tasks.filter(t => known.has(t.id) && !seen.has(t.id) && seen.add(t.id)).map(t => ({id:t.id, track:known.get(t.id).track, done:!!t.done, review:!!t.review, carried:!!t.carried}));
+      result.days[d] = tasks.filter(t => known.has(t.id) && !seen.has(t.id) && seen.add(t.id)).map(t => ({id:t.id, track:known.get(t.id).track, done:!!t.done, review:!!t.review, carried:!!t.carried,...(typeof t.reviewKey==='string' && t.reviewKey.startsWith(t.id+'@') && validDate(t.reviewKey.slice(t.id.length+1)) ? {reviewKey:t.reviewKey} : {})}));
     }
     for (const [d,tasks] of Object.entries(input.extraDays || {})) {
       if (!validDate(d) || !Array.isArray(tasks)) throw Error('备份中的加练清单无效。');
       const seen = new Set((result.days[d] || []).map(t=>t.id));
-      result.extraDays[d] = tasks.filter(t=>known.has(t.id) && !seen.has(t.id) && seen.add(t.id)).map(t=>({id:t.id,track:known.get(t.id).track,done:!!t.done,review:!!t.review,carried:false,extra:true,early:!!t.early}));
+      result.extraDays[d] = tasks.filter(t=>known.has(t.id) && !seen.has(t.id) && seen.add(t.id)).map(t=>({id:t.id,track:known.get(t.id).track,done:!!t.done,review:!!t.review,carried:false,extra:true,early:!!t.early,...(typeof t.reviewKey==='string' && t.reviewKey.startsWith(t.id+'@') && validDate(t.reviewKey.slice(t.id.length+1)) ? {reviewKey:t.reviewKey} : {})}));
     }
     result.history = input.history.filter(h => known.has(h.id)).map(h => ({id:h.id,...record(h)}));
     for (const [id,d] of Object.entries(input.drafts || {})) if (known.has(id)) result.drafts[id] = {answer:String(d.answer || '').slice(0,300000), reflection:String(d.reflection || '').slice(0,10000)};
+    for (const [key,d] of Object.entries(input.reviewDrafts || {})) if (d && known.has(d.id) && validDate(d.startedOn) && key===d.id+'@'+d.startedOn) result.reviewDrafts[key]={id:d.id,startedOn:d.startedOn,answer:String(d.answer || '').slice(0,300000),reflection:String(d.reflection || '').slice(0,10000),hintLevel:Number.isInteger(d.hintLevel) && d.hintLevel>=0 && d.hintLevel<=3 ? d.hintLevel : 0};
     result.submissions = (Array.isArray(input.submissions) ? input.submissions : []).filter(s => known.has(s.id) && typeof s.at === 'string').map(s => {
       const row={id:s.id,at:s.at,answer:String(s.answer || '').slice(0,300000),reflection:String(s.reflection || '').slice(0,10000)};
+      if(Number.isInteger(s.hintLevel)&&s.hintLevel>=0&&s.hintLevel<=3)row.hintLevel=s.hintLevel;
+      if(validDate(s.startedOn))row.startedOn=s.startedOn;
       if(s.result){
         const r=s.result,states=['pending','accepted','wrong_answer','memory_limit','output_limit','time_limit','runtime_error','compile_error','internal_error','connection_error','cancelled'];
         if(r.provider!=='leetcode'||!states.includes(r.status))throw Error('备份中的力扣结果无效。');
@@ -98,7 +122,7 @@
     return result;
   }
   function merge(a,b) {
-    const out = {...a, days:{...a.days}, extraDays:{...a.extraDays}, progress:{...a.progress}, drafts:{...a.drafts,...b.drafts}, hints:{...a.hints,...b.hints}, focus:{...a.focus}};
+    const out = {...a, days:{...a.days}, extraDays:{...a.extraDays}, progress:{...a.progress}, drafts:{...a.drafts,...b.drafts}, reviewDrafts:{...a.reviewDrafts,...b.reviewDrafts}, hints:{...a.hints,...b.hints}, focus:{...a.focus}};
     for (const [id,p] of Object.entries(b.progress)) if (!out.progress[id] || p.date >= out.progress[id].date) out.progress[id] = p;
     for (const [day,tasks] of Object.entries(b.days)) if (!out.days[day]) out.days[day] = tasks;
     for (const [d,tasks] of Object.entries(b.extraDays || {})) {
@@ -113,6 +137,6 @@
     out.submissions = unique([...a.submissions,...b.submissions],s=>`${s.id}:${s.at}`);
     return out;
   }
-  const api = {TRACKS,INTERVALS,dayKey,addDays,emptyState,plan,nextPractice,grade,importState,merge};
+  const api = {TRACKS,INTERVALS,dayKey,addDays,emptyState,plan,nextPractice,getDraft,grade,importState,merge};
   if (typeof module !== 'undefined') module.exports = api; else root.CoachCore = api;
 })(typeof window === 'undefined' ? globalThis : window);

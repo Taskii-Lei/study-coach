@@ -86,3 +86,46 @@ test('unfinished optional extras do not turn into mandatory carry-over tasks tom
  const next=C.plan(s,catalog,'2026-11-20');assert.equal(next.length,3);assert.ok(next.every(t=>!t.extra));assert.ok(!next.some(t=>t.id==='code-02'));
  assert.equal(s.extraDays[day][0].done,false);
 });
+test('a new due-review round starts from template without touching old code or submissions',()=>{
+ const s=C.emptyState();s.progress['code-01']={date:'2026-11-19',due:'2026-11-20',score:2,stage:0};
+ s.drafts['code-01']={answer:'old solution',reflection:'old explanation'};s.submissions=[{id:'code-01',at:'2026-11-19T12:00:00Z',answer:'old solution',reflection:'old explanation'}];s.hints['code-01']=3;
+ C.plan(s,catalog,'2026-11-20');const d=C.getDraft(s,'code-01','2026-11-20','TEMPLATE');
+ assert.equal(d.answer,'TEMPLATE');assert.equal(d.reflection,'');assert.equal(d.hintLevel,0);
+ assert.equal(s.drafts['code-01'].answer,'old solution');assert.equal(s.submissions[0].answer,'old solution');
+});
+test('review drafts persist through rerenders and backup/reload, including hint usage',()=>{
+ const s=C.emptyState();s.progress['qa-01']={date:'2026-11-19',due:'2026-11-20',score:1,stage:0};C.plan(s,catalog,'2026-11-20');
+ const d=C.getDraft(s,'qa-01','2026-11-20','TEMPLATE');d.answer='my new explanation';d.reflection='new evidence';d.hintLevel=1;
+ assert.equal(C.getDraft(s,'qa-01','2026-11-20','TEMPLATE'),d);
+ const restored=C.importState(JSON.parse(JSON.stringify(s)),catalog);assert.equal(C.getDraft(restored,'qa-01','2026-11-20','TEMPLATE').answer,'my new explanation');
+ assert.equal(C.getDraft(restored,'qa-01','2026-11-20','TEMPLATE').hintLevel,1);
+});
+test('unfinished review carries its round key and draft to the next day',()=>{
+ const s=C.emptyState();s.progress['code-01']={date:'2026-11-19',due:'2026-11-20',score:2,stage:0};C.plan(s,catalog,'2026-11-20');
+ const d=C.getDraft(s,'code-01','2026-11-20','TEMPLATE');d.answer='unfinished review';C.plan(s,catalog,'2026-11-21');
+ assert.equal(C.getDraft(s,'code-01','2026-11-21','TEMPLATE'),d);
+ C.grade(s,'code-01',3,'2026-11-21','done');assert.equal(C.getDraft(s,'code-01','2026-11-21','TEMPLATE').answer,'unfinished review');
+});
+test('the following scheduled review gets a new blank draft while the previous review remains archived',()=>{
+ const s=C.emptyState();s.progress['code-01']={date:'2026-11-19',due:'2026-11-20',score:2,stage:0};C.plan(s,catalog,'2026-11-20');
+ C.getDraft(s,'code-01','2026-11-20','TEMPLATE').answer='review one code';C.grade(s,'code-01',3,'2026-11-20','done');
+ C.plan(s,catalog,'2026-11-23');const d=C.getDraft(s,'code-01','2026-11-23','TEMPLATE');
+ assert.equal(d.answer,'TEMPLATE');assert.equal(d.hintLevel,0);assert.equal(s.reviewDrafts['code-01@2026-11-20'].answer,'review one code');
+});
+test('fresh or carried unfinished first attempts keep their original draft',()=>{
+ const s=C.emptyState();C.plan(s,catalog,'2026-11-19');const d=C.getDraft(s,'lc-1','2026-11-19','TEMPLATE');d.answer='unfinished original';
+ C.plan(s,catalog,'2026-11-20');assert.equal(C.getDraft(s,'lc-1','2026-11-20','TEMPLATE').answer,'unfinished original');
+ assert.deepEqual(s.reviewDrafts,{});
+});
+test('an explicit early review starts clean and stays stable after same-day navigation',()=>{
+ const s=C.emptyState();s.drafts['code-03']={answer:'old attention',reflection:''};
+ s.progress['code-03']={date:'2026-11-19',due:'2026-11-25',score:3,stage:1};
+ const d=C.getDraft(s,'code-03','2026-11-20','TEMPLATE',true);d.answer='review in progress';
+ assert.equal(C.getDraft(s,'code-03','2026-11-20','TEMPLATE',true),d);assert.equal(s.drafts['code-03'].answer,'old attention');
+});
+test('completed review remains the same round after import, and snapshot hint levels survive',()=>{
+ const s=C.emptyState();s.progress['code-01']={date:'2026-11-19',due:'2026-11-20',score:2,stage:0};C.plan(s,catalog,'2026-11-20');
+ const d=C.getDraft(s,'code-01','2026-11-20','TEMPLATE');d.answer='completed new review';s.submissions.push({id:'code-01',at:'2026-11-20T01:00:00Z',answer:d.answer,reflection:'',hintLevel:0,startedOn:d.startedOn});
+ C.grade(s,'code-01',3,'2026-11-20','done');const imported=C.importState(s,catalog);
+ assert.equal(C.getDraft(imported,'code-01','2026-11-20','TEMPLATE').answer,'completed new review');assert.equal(imported.submissions[0].hintLevel,0);
+});
