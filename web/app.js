@@ -1,10 +1,12 @@
 (() => {
 'use strict';
 const LC=window.LeetCodeClient;
+const F=window.CoachFeedback;
 let activeOfficial=null;
 const C = window.CoachCore, catalog = window.CURRICULUM, byId = new Map(catalog.map(q => [q.id,q]));
 const $ = id => document.getElementById(id), KEY = 'xunxu-study-coach-v2';
 const titles = {today:'今日学习',bank:'全部题库',review:'复习计划',progress:'学习记录',settings:'学习设置'};
+const initialFeedback=location.hash.startsWith('#coach-feedback=')?location.hash.slice(1):null;
 const trackNames = {leetcode:'LeetCode Hot 100',llm_code:'LLM 手写算法',llm_qa:'LLM 面试复习'};
 const durations = {leetcode:30,llm_code:20,llm_qa:10};
 const trackColors = {leetcode:'purple',llm_code:'teal',llm_qa:'amber'};
@@ -24,7 +26,7 @@ function toast(message){clearTimeout(toastTimeout);$('toast').textContent=messag
 function showDialog(title,content){$('dialog-title').textContent=title;$('dialog-content').innerHTML=content;$('info-dialog').showModal();}
 function empty(message){return `<div class="empty"><span>✧</span>${escape(message)}</div>`;}
 function hasPracticed(id){return !!state.progress[id]||!!state.leetcode.accepted[id]||state.submissions.some(s=>s.id===id);}
-function qstatus(q){if(state.leetcode.accepted[q.id]||state.submissions.some(s=>s.id===q.id&&s.result?.status==='accepted'))return '力扣已通过';const p=state.progress[q.id];return !p?'尚未练习':p.due<=day?'待复习':p.source==='self'?'已自评':'已反馈';}
+function qstatus(q){if(state.leetcode.accepted[q.id]||state.submissions.some(s=>s.id===q.id&&s.result?.status==='accepted'))return '力扣已通过';const p=state.progress[q.id];if(p?.due<=day)return '待复习';const latest=state.submissions.filter(s=>s.id===q.id).slice(-1)[0];if(latest?.coachRequestId)return latest.coachFeedback?coachLabel(latest.coachFeedback):'等待教练批改';return !p?'尚未练习':p.source==='self'?'已自评':'已反馈';}
 function draft(q,forceReview=false){return C.getDraft(state,q.id,day,starter(q),forceReview);}
 function currentHintLevel(q=byId.get(selected)){const d=draft(q);return d.startedOn?d.hintLevel:state.hints[q.id]||0;}
 function starter(q){if(q.track==='leetcode')return LC.starter(q.id)||'# 实现后提交到力扣官方判题\n';
@@ -83,6 +85,7 @@ function renderQuestion(){
   };
   $('question-examples').innerHTML=examples[q.id]?`<div class="example"><b>${escape(examples[q.id][0])}</b><pre>${escape(examples[q.id][1])}</pre></div>`:'';
   $('acceptance-text').textContent=q.track==='llm_qa'?'用自己的话解释原理，交代假设和适用边界，并准备回答一个追问。':'提交代码、思路与复杂度分析；设计至少两个有区分力的测试，并说明是否实际运行。';
+  $('coach-handoff').classList.toggle('hidden',q.track==='leetcode');
   $('answer-editor').value=d.answer;$('reflection').value=d.reflection;
   $('review-draft-note').classList.toggle('hidden',!d.startedOn);
   $('editor-language').textContent=q.track==='llm_qa'?'Markdown · 口述笔记':'Python 3';
@@ -99,7 +102,7 @@ function renderSubmissions(){
   $('submission-count').textContent=rows.length;
   $('history-actions').classList.toggle('hidden',!rows.length);
   submissionStatus();
-  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>${escape(s.result?officialLabel(s.result):'已保存 · 尚未判题')}</h4>${s.result?officialResultHTML(s.result):''}<small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
+  $('submission-history').innerHTML=rows.length?rows.map(s=>`<article class="history-item"><h4>${escape(s.coachFeedback?coachLabel(s.coachFeedback):s.result?officialLabel(s.result):s.coachRequestId?'已提交 · 等待教练批改':'已保存 · 尚未批改')}</h4>${s.coachFeedback?coachResultHTML(s.coachFeedback):s.result?officialResultHTML(s.result):s.coachRequestId?'<p class="fine-print">将作答包粘贴到当前 Codex 聊天，批改后用回填链接同步。</p>':''}<small>${escape(formatTime(s.at))}</small><pre>${escape(s.answer)}</pre><p>${escape(s.reflection)}</p></article>`).join(''):empty('还没有提交。先试着写下你的思路。');
   const active=draft(byId.get(selected)),old=state.drafts[selected];
   if(active.startedOn && old?.answer && !rows.some(s=>s.answer===old.answer))$('submission-history').innerHTML+=`<details class="history-item"><summary>上次练习草稿（点击查看）</summary><pre>${escape(old.answer)}</pre><p>${escape(old.reflection)}</p></details>`;
   const h=state.history.filter(h=>h.id===selected).slice().reverse();
@@ -162,7 +165,7 @@ async function importData(file){
     Object.assign(state.drafts,incoming.drafts);
     const seen=new Set(state.history.map(h=>`${h.id}|${h.date}|${h.score}|${h.feedback}`));
     for(const h of incoming.history){const k=`${h.id}|${h.date}|${h.score}|${h.feedback}`;if(!seen.has(k)){state.history.push(h);seen.add(k);}}
-    const submitted=new Set(state.submissions.map(s=>s.id+'|'+s.at));for(const s of incoming.submissions)if(!submitted.has(s.id+'|'+s.at)){state.submissions.push(s);submitted.add(s.id+'|'+s.at);}
+    const submitted=new Map(state.submissions.map(s=>[s.id+'|'+s.at,s]));for(const s of incoming.submissions){const old=submitted.get(s.id+'|'+s.at);if(!old){state.submissions.push(s);submitted.set(s.id+'|'+s.at,s);}else if(old.answer===s.answer&&old.reflection===s.reflection){if(s.coachRequestId&&!old.coachRequestId)old.coachRequestId=s.coachRequestId;if(s.coachFeedback&&old.coachRequestId===s.coachRequestId)old.coachFeedback=s.coachFeedback;}}
     Object.assign(state.reviewDrafts,incoming.reviewDrafts);
     for(const [id,n] of Object.entries(incoming.hints))state.hints[id]=Math.max(state.hints[id]||0,n);
     for(const [d,n] of Object.entries(incoming.focus))state.focus[d]=Math.max(state.focus[d]||0,n);
@@ -177,7 +180,7 @@ async function importData(file){
 function renderStatsAndQuestion(){renderStats();renderQuestion();}
 function submissionStatus(message,kind='success'){
   const el=$('submission-status'),d=draft(byId.get(selected)),rows=state.submissions.filter(s=>s.id===selected && (!d.startedOn || s.startedOn===d.startedOn)),latest=rows[rows.length-1];
-  if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':latest.result?officialSummary(latest.result):`最近一次提交已保存（${formatTime(latest.at)}），尚未判题。`;kind=changed?'pending':latest.result?.status==='accepted'?'success':'pending';}
+  if(!message&&latest){const changed=d&&(latest.answer!==d.answer||latest.reflection!==d.reflection);message=changed?'草稿已修改，尚未提交这个版本。':latest.coachFeedback?coachLabel(latest.coachFeedback):latest.result?officialSummary(latest.result):latest.coachRequestId?'等待教练批改：将本次作答包粘贴到当前 Codex 聊天。':`最近一次提交已保存（${formatTime(latest.at)}），尚未判题。`;kind=changed?'pending':latest.coachFeedback?latest.coachFeedback.verdict==='correct'?'success':'error':latest.result?.status==='accepted'?'success':'pending';}
   el.textContent=message||'';el.className='submission-status '+(message?kind:'hidden');
 }
 function submit(){
@@ -186,13 +189,34 @@ function submit(){
   const d=draft(byId.get(selected));
   if(!d.answer.trim()){submissionStatus('还没有可提交的答案，请先写下代码或思路。','error');$('answer-editor').focus();return;}
   const rows=state.submissions.filter(s=>s.id===selected),previous=rows[rows.length-1];
-  if(previous&&previous.startedOn===d.startedOn&&previous.answer===d.answer&&previous.reflection===d.reflection){renderSubmissions();setTab('history');submissionStatus('这份答案已经提交，下面是已保存的记录。');return;}
+  if(previous&&previous.startedOn===d.startedOn&&previous.answer===d.answer&&previous.reflection===d.reflection){F.makeRequest(previous);persist();renderSubmissions();setTab('history');copyAnswer(previous);return;}
   const record={id:selected,at:new Date().toISOString(),...d,hintLevel:currentHintLevel()};
+  F.makeRequest(record);
   state.submissions.push(record);
   if(!persist()){state.submissions.pop();submissionStatus('提交失败：存储空间不足或浏览器禁止保存。请导出备份，答案仍在编辑器中。','error');return;}
-  renderSubmissions();setTab('history');submissionStatus('提交成功，已保存本次答案。复制给教练可获得批改；右侧可记录自评并安排复习。');
-  toast('答案已提交，已打开提交记录。');
+  renderStatsAndQuestion();setTab('history');submissionStatus('已保存本次提交，等待教练批改。请将作答包粘贴到当前 Codex 聊天。','pending');
+  copyAnswer(record);
 }
+function coachLabel(value){return {correct:'教练判定：正确',partial:'教练判定：部分正确',incorrect:'教练判定：需修正'}[value.verdict]+` · ${value.score} / 4`;}
+function coachResultHTML(value){
+  const verification={ran:'代码已实际运行',static:'静态审阅 · 未运行代码',discussion:'原理、推导与边界审阅'}[value.verification.mode];
+  return `<div class="official-result ${value.verdict==='correct'?'accepted':'failed'}"><b>Codex 教练批改 · ${value.score} / 4</b><p class="feedback-prose">${escape(value.feedback)}</p><details open><summary>${verification}</summary><p class="feedback-prose">${escape(value.verification.detail)}</p></details><p class="feedback-prose"><strong>下一步：</strong>${escape(value.nextStep)}</p><small>对应提交：${escape(formatTime(value.submittedAt))} · 反馈由回填链接导入</small></div>`;
+}
+function importCoachFeedback(raw){
+  try{
+    const info=F.inspect(state,F.parse(raw),catalog),{value,q,submission}=info;
+    if(info.duplicate){toast('这份提交的教练反馈已经回填，无需重复导入。');return;}
+    showDialog('回填教练批改',`<p><b>${escape(q.title)}</b> · ${escape(formatTime(submission.at))} 的提交</p><h3>${escape(coachLabel(value))}</h3>${coachResultHTML(value)}<p>${info.stale?'这是旧版本：只保存对应提交的反馈，不覆盖当前进度与复习安排。':'确认后保存反馈，并根据评分安排下一次复习。'}</p><details><summary>核对本次作答</summary><pre class="feedback-snapshot">${escape(submission.answer)}</pre></details><button id="apply-coach-feedback" class="button primary full">${info.stale?'保存旧版本反馈':'确认回填并安排复习'}</button>`);
+    $('apply-coach-feedback').onclick=()=>{
+      if(saveFailed){toast('存档尚不能写入，请先备份。');return;}
+      const next=JSON.parse(JSON.stringify(state)),result=F.apply(next,value,catalog,day,C);
+      try{localStorage.setItem(KEY,JSON.stringify(next));}catch(e){toast('保存失败，原记录未修改。请先导出备份。');return;}
+      state=next;persist();$('info-dialog').close();switchQuestion(q.id);renderStatsAndQuestion();setTab('history');
+      toast(result.stale?'旧版本反馈已保存，当前复习安排保持不变。':`教练反馈已回填，下次复习：${state.progress[q.id].due}`);
+    };
+  }catch(e){showDialog('未能回填反馈',`<p>${escape(e.message)}</p><p>作答和进度没有修改。可在原浏览器打开链接，或使用「粘贴教练反馈」重试。</p>`);}
+}
+function pasteCoachFeedback(){showDialog('粘贴教练反馈','<p>粘贴教练给出的完整回填链接或反馈 JSON。确认前会核对题号与提交版本。</p><textarea id="coach-feedback-input" class="reflection" aria-label="教练回填链接或 JSON" placeholder="https://taskii-lei.github.io/study-coach/#coach-feedback=…"></textarea><button id="preview-coach-feedback" class="button primary full">查看批改并回填</button>');$('preview-coach-feedback').onclick=()=>importCoachFeedback($('coach-feedback-input').value);}
 const OFFICIAL_LABELS={pending:'已提交 · 等待官方结果',accepted:'通过 · Accepted',wrong_answer:'答案错误 · Wrong Answer',time_limit:'超时 · Time Limit Exceeded',memory_limit:'超出内存限制',output_limit:'超出输出限制',runtime_error:'运行错误 · Runtime Error',compile_error:'编译 / 语法错误',internal_error:'力扣判题服务错误',connection_error:'连接未完成 · 请查看详情',cancelled:'已停止等待'};
 function officialLabel(value){const r=typeof value==='object'?value:null,status=r?r.status:value;return status==='connection_error'&&r?LC.failureInfo(r).title:OFFICIAL_LABELS[status]||'等待力扣判题';}
 function officialSummary(r){const title=officialLabel(r);return r.status==='connection_error'&&r.error?title+'：'+r.error:title;}
@@ -213,7 +237,8 @@ function renderLeetCodeConnection(){
   $('install-extension').textContent=LC.connected?'连接说明':'安装扩展';
   $('official-problem').href=q.url||'https://leetcode.cn/';
   $('submit-answer').disabled=!!activeOfficial;
-  $('submit-answer').textContent=activeOfficial?'力扣判题中…':enabled?'提交到力扣判题':'提交答案';
+  $('submit-answer').textContent=activeOfficial?'力扣判题中…':enabled?'提交到力扣判题':'提交给教练并复制';
+  $('copy-answer').classList.toggle('hidden',!enabled);
   $('cancel-official').classList.toggle('hidden',!activeOfficial);
 }
 function installExtension(){
@@ -264,11 +289,16 @@ async function syncLeetCode(){
   }catch(error){$('leetcode-sync-status').textContent=error.message||'同步失败，已保留上次记录。';}finally{button.disabled=false;}
 }
 async function copyAnswer(snapshot){
-  const savedAnswer=snapshot&&typeof snapshot.answer==='string';if(!savedAnswer)saveDraft();const q=byId.get(selected),d=savedAnswer?snapshot:draft(byId.get(selected));
+  const savedAnswer=snapshot&&typeof snapshot.answer==='string',q=byId.get(selected);
+  if(!savedAnswer&&q.track!=='leetcode'){submit();return;}
+  if(!savedAnswer)saveDraft();const d=savedAnswer?snapshot:draft(q);
   if(!d.answer.trim()){toast('请先写一些代码或思路。');return;}
+  const request=savedAnswer&&q.track!=='leetcode'?F.makeRequest(d):null;
+  if(request){if(!persist()){toast('作答包未能保存，请先导出备份。');return;}renderSubmissions();}
   const official=snapshot?.result;
   const officialFeedback=official?'\n\n力扣反馈：'+officialLabel(official)+'\n失败用例：'+(official.input||'—')+'\n预期：'+(official.expected||'—')+'\n实际：'+(official.actual||'—')+'\n错误：'+(official.error||'—'):'';
-  const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${savedAnswer?(snapshot.hintLevel??state.hints[q.id]??0):currentHintLevel(q)}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}\n\n如需同步网页反馈，请提供包含本题记录的 coach.py progress.json，或按网页自评量表说明评分。${officialFeedback}`;
+  const handoff=request?`\n\n网页回填标识（请原样保留）：\n${JSON.stringify(request)}\n\n批改后请给出「回填网页」链接：优先用本地 study-coach/coach_feedback.py build --input <反馈JSON文件> 生成；协议见同目录 COACH_FEEDBACK.md。反馈需包含正确/部分正确/需修正、0–4分、关键问题、验证说明及复习建议，并绑定上述提交。代码题尽量实际运行；未运行明确标记 static，口述题标记 discussion。只批改本作答快照，不能以旧代码代替。若无法生成链接，请返回可粘贴回网页的反馈 JSON。`:'';
+  const text=`请按循序学习教练的方式批改我的作答。先指出关键问题，必要时给分级提示；没有运行代码请明确说明。结束时给出0–4分及复习建议。\n\n题号：${q.id}\n题目：${q.title}\n要求：${q.prompt}\n已查看提示级别：${savedAnswer?(snapshot.hintLevel??state.hints[q.id]??0):currentHintLevel(q)}\n\n作答：\n${d.answer}\n\n思路与验证：\n${d.reflection || '尚未填写'}${handoff}${officialFeedback}`;
   try{await navigator.clipboard.writeText(text);toast('已复制。粘贴到当前 Codex 聊天即可批改。');}catch(e){showDialog('复制给教练','<p>浏览器无法自动复制，请选中下方内容复制。</p><textarea id="copy-fallback" class="reflection" style="height:260px" readonly></textarea>');$('copy-fallback').value=text;$('copy-fallback').select();}
 }
 function complete(){
@@ -300,11 +330,13 @@ $('answer-editor').addEventListener('keydown',editorKeydown);
 $('reflection').addEventListener('keydown',editorKeydown);
 $('history-edit').onclick=()=>{setTab('answer');$('answer-editor').focus();};
 $('history-copy').onclick=()=>{const rows=state.submissions.filter(s=>s.id===selected);copyAnswer(rows[rows.length-1]);};
+$('paste-coach-feedback').onclick=pasteCoachFeedback;
+$('settings-coach-feedback').onclick=pasteCoachFeedback;
 $('submit-answer').onclick=submit;$('copy-answer').onclick=copyAnswer;$('complete-task').onclick=complete;
 $('timer-toggle').onclick=()=>{if(timerEnd){stopTimer();return;}if(remaining<=0)remaining=durations[byId.get(selected).track]*60000;timerLast=Date.now();timerEnd=timerLast+remaining;lastTickSave=timerLast;renderClock();toast('专注计时已开始，先试着独立想一想。');};
 $('search').addEventListener('input',renderBank);$('track-filter').onchange=renderBank;$('status-filter').onchange=renderBank;
 $('export-progress').onclick=exportData;$('export-settings').onclick=exportData;$('import-button').onclick=()=>$('import-file').click();$('import-file').onchange=e=>importData(e.target.files[0]);
-$('help-button').onclick=()=>showDialog('欢迎来到循序','<p>这里是你的算法与 LLM 学习工作台。</p><ul><li>每天三项任务：Hot 100、LLM 手写、面试复习。</li><li>有空时选择路线，点击「再来一题」自由加练。</li><li>作答会自动保存；卡住时逐级打开提示。</li><li>记录自评后，会安排间隔复习。</li><li>深度批改：点击「复制给教练」，粘贴到 Codex 聊天。</li></ul><p>数据仅保存在当前浏览器，请定期导出备份。09:00 / 21:00 提醒仍由 Codex 自动化提供，网页本身不会在关闭后推送通知。</p>');
+$('help-button').onclick=()=>showDialog('欢迎来到循序','<p>这里是你的算法与 LLM 学习工作台。</p><ul><li>每天三项任务：Hot 100、LLM 手写、面试复习。</li><li>有空时选择路线，点击「再来一题」自由加练。</li><li>作答会自动保存；卡住时逐级打开提示。</li><li>记录自评后，会安排间隔复习。</li><li>深度批改：LLM 手写与八股题点击「提交给教练并复制」，粘贴到当前聊天；打开教练返回的回填链接，确认同步评分与复习。</li></ul><p>数据仅保存在当前浏览器，请定期导出备份。09:00 / 21:00 提醒仍由 Codex 自动化提供，网页本身不会在关闭后推送通知。</p>');
 $('schedule-button').onclick=()=>showDialog('每天 60 分钟，按时开始','<p>北京时间 09:00 出题，21:00 检查。提醒由 Codex 自动化提供；修改时间可在当前聊天告诉教练。</p><ul><li>Hot 100：30 分钟</li><li>LLM 手写：20 分钟</li><li>LLM 面试：10 分钟</li></ul><p>未完成任务顺延；到期复习优先。网页与 Codex 的进度可通过设置中的 JSON 导入、导出交换。</p>');
 $('info-dialog').querySelectorAll('.dialog-close,.dialog-dismiss').forEach(b=>b.onclick=()=>$('info-dialog').close());
 $('info-dialog').addEventListener('click',e=>{if(e.target===$('info-dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
@@ -320,4 +352,6 @@ $('leetcode-round-start').onchange=()=>{state.leetcode.roundStart=$('leetcode-ro
 LC.onConnection(()=>{renderLeetCodeConnection();});
 remaining=durations[byId.get(selected).track]*60000;
 renderStatsAndQuestion();renderClock();showView(location.hash.slice(1)||'today');persist();
+if(initialFeedback)importCoachFeedback(initialFeedback);
+window.addEventListener('hashchange',()=>{if(location.hash.startsWith('#coach-feedback=')){const value=location.hash.slice(1);history.replaceState(null,'','#today');importCoachFeedback(value);}});
 })();

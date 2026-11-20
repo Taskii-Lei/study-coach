@@ -2,6 +2,7 @@
   'use strict';
   const TRACKS = ['leetcode', 'llm_code', 'llm_qa'];
   const INTERVALS = [1, 3, 7, 14, 30];
+  const Feedback = typeof module !== 'undefined' ? require('./coach-feedback.js') : root.CoachFeedback;
   function dayKey(now = new Date()) {
     const parts = new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit'}).formatToParts(now);
     const part = type => parts.find(p => p.type === type).value;
@@ -102,6 +103,11 @@
       const row={id:s.id,at:s.at,answer:String(s.answer || '').slice(0,300000),reflection:String(s.reflection || '').slice(0,10000)};
       if(Number.isInteger(s.hintLevel)&&s.hintLevel>=0&&s.hintLevel<=3)row.hintLevel=s.hintLevel;
       if(validDate(s.startedOn))row.startedOn=s.startedOn;
+      if(typeof s.coachRequestId==='string' && /^[a-zA-Z0-9-]{12,100}$/.test(s.coachRequestId))row.coachRequestId=s.coachRequestId;
+      if(s.coachFeedback){
+        row.coachFeedback=Feedback.normalize(s.coachFeedback);
+        if(row.coachFeedback.requestId!==row.coachRequestId||row.coachFeedback.questionId!==row.id||row.coachFeedback.submittedAt!==row.at)throw Error('备份中的教练反馈与提交版本不匹配。');
+      }
       if(s.result){
         const r=s.result,states=['pending','accepted','wrong_answer','memory_limit','output_limit','time_limit','runtime_error','compile_error','internal_error','connection_error','cancelled'];
         if(r.provider!=='leetcode'||!states.includes(r.status))throw Error('备份中的力扣结果无效。');
@@ -134,7 +140,14 @@
     for (const [d,n] of Object.entries(b.focus)) out.focus[d] = Math.max(n,out.focus[d] || 0);
     const unique = (xs,key) => [...new Map(xs.map(x => [key(x),x])).values()];
     out.history = unique([...a.history,...b.history],h=>`${h.id}:${h.date}:${h.evidence}:${h.score}`);
-    out.submissions = unique([...a.submissions,...b.submissions],s=>`${s.id}:${s.at}`);
+    const submissions=new Map();
+    for(const s of [...a.submissions,...b.submissions]){
+      const key=s.id+':'+s.at,old=submissions.get(key);
+      const row=old&&old.answer===s.answer&&old.reflection===s.reflection?{...old,...s}:{...s};
+      if(row.coachFeedback?.requestId!==row.coachRequestId)delete row.coachFeedback;
+      submissions.set(key,row);
+    }
+    out.submissions=[...submissions.values()];
     return out;
   }
   const api = {TRACKS,INTERVALS,dayKey,addDays,emptyState,plan,nextPractice,getDraft,grade,importState,merge};
